@@ -1,0 +1,113 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CIALDELLA — diario de Fiona</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="app" class="page" v-cloak>
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">
+            <img class="brand-photo" src="https://ejfapcgmmbgdxakzqkfe.supabase.co/storage/v1/object/public/media/FOTO.jpg" alt="foto de fiona" />
+          </div>
+          <div class="brand-text">
+            <h1>CIALDELLA</h1>
+            <p>hola buenas aqui fiona</p>
+          </div>
+        </div>
+
+        <div class="sidebar-card main-cta">
+          <h2>🤭 a darle al tucu tucu</h2>
+          <button class="primary" @click="goSeed">contar tu vida</button>
+        </div>
+      </aside>
+
+      <main class="content">
+        <div class="mobile-card">
+          <h2>Diario de fiona</h2>
+          <p class="muted">cronicas de un no ligue</p>
+          <button class="primary" @click="goSeed">a darle al tucu tucu 🤭</button>
+        </div>
+
+        <header class="topbar">
+          <div>
+            <h2>Diario de fiona</h2>
+            <p class="muted">cronicas de un no ligue</p>
+          </div>
+          <div class="view-toggle">
+            <button class="ghost" @click="goList">refrescar</button>
+          </div>
+        </header>
+
+        <section v-if="view === 'list'" class="post-grid">
+          <article v-for="post in posts" :key="post.id" class="post-card" @click="openPost(post.id)">
+            <div class="date">{{ friendlyDate(post.created_at) }}</div>
+            <h3>{{ post.title }}</h3>
+            <p class="excerpt">{{ excerpt(post.body) }}</p>
+          </article>
+
+          <div v-if="!posts.length" class="post-card">
+            <h3>✨ Todo listo</h3>
+            <p class="excerpt">Aún no hay posts. Puedes crear el de hoy con el botón de la izquierda.</p>
+            <button class="ghost" @click="goSeed">crear post de prueba</button>
+          </div>
+
+          <p v-if="errorMsg" class="muted">{{ errorMsg }}</p>
+        </section>
+
+        <section v-if="view === 'detail'" class="post-detail">
+          <div class="actions">
+            <div>
+              <div class="date">{{ friendlyDate(currentPost?.created_at) }}</div>
+              <div class="muted" v-if="currentPost?.updated_at">editado {{ friendlyDate(currentPost.updated_at) }}</div>
+            </div>
+            <div class="detail-actions">
+              <button class="ghost" @click="goList">← volver</button>
+              <button class="icon-btn" @click="openEdit">✏️ editar</button>
+            </div>
+          </div>
+          <h3>{{ currentPost?.title }}</h3>
+          <p v-html="detailBody"></p>
+          <div class="media-grid">
+            <div v-for="(item, idx) in currentPost?.media || []" :key="idx" class="media-item">
+              <img v-if="item.type === 'image'" :src="item.url" :alt="item.caption || 'foto'" />
+              <audio v-else-if="item.type === 'audio'" controls :src="item.url"></audio>
+              <div class="muted">{{ item.caption }}</div>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="view === 'editor'" class="editor">
+          <h3>{{ isEdit ? 'editar post' : 'nuevo post' }}</h3>
+          <form @submit.prevent="savePost">
+            <input v-model="editor.code" type="text" placeholder="codigo secreto" required />
+            <div class="hint">🔒 escribe el codigo para guardar cambios</div>
+            <input v-model="editor.title" type="text" placeholder="titulo cute" required />
+            <textarea v-model="editor.body" placeholder="escribe aqui" required></textarea>
+            <div>
+              <label>Adjuntar imagenes o audios</label>
+              <input type="file" multiple accept="image/*,audio/*" @change="handleFiles" />
+            </div>
+            <div class="media-list">
+              <div v-for="(item, idx) in pendingMedia" :key="idx" class="media-chip">
+                <span>{{ item.type === 'image' ? '🖼️' : '🔊' }} {{ item.caption || item.name || 'archivo' }}</span>
+                <button class="ghost" type="button" @click="removeMedia(idx)">x</button>
+              </div>
+            </div>
+            <button class="primary" type="submit">{{ isEdit ? 'guardar cambios' : 'publicar' }}</button>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
