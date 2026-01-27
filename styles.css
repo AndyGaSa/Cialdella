@@ -320,6 +320,10 @@ button:hover {
   margin-top: 16px;
 }
 
+.post-detail .media-grid {
+  grid-template-columns: 1fr;
+}
+
 .media-item {
   background: #fff5f2;
   border-radius: 16px;
@@ -329,6 +333,8 @@ button:hover {
 .media-item img {
   width: 100%;
   border-radius: 12px;
+  display: block;
+  margin: 0 auto;
 }
 
 .media-photo {
@@ -371,6 +377,9 @@ button:hover {
 .lightbox {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100vh;
   background: rgba(15, 12, 10, 0.72);
   backdrop-filter: blur(6px);
   display: grid;
