@@ -27,7 +27,6 @@ createApp({
       lightbox: {
         open: false,
         url: "",
-        hint: "",
       },
     };
   },
@@ -158,23 +157,17 @@ createApp({
     },
     openImage(url) {
       if (!url) return;
-      this.lightbox = { open: true, url, hint: this.getLightboxHint() };
+      this.lightbox = { open: true, url };
       document.body.classList.add("no-scroll");
     },
     closeLightbox() {
-      this.lightbox = { open: false, url: "", hint: "" };
+      this.lightbox = { open: false, url: "" };
       document.body.classList.remove("no-scroll");
-    },
-    getLightboxHint() {
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-      if (!isIOS) return "";
-      return "en iPhone: mantén pulsado la imagen y toca “Guardar en Fotos”.";
     },
     async downloadImage() {
       if (!this.lightbox.url) return;
 
       const url = this.lightbox.url;
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
 
       if (navigator.share && navigator.canShare) {
         try {
@@ -199,10 +192,6 @@ createApp({
       document.body.appendChild(link);
       link.click();
       link.remove();
-
-      if (isIOS) {
-        this.lightbox.hint = "abre la imagen y luego “Guardar en Fotos”.";
-      }
     },
     handleKeydown(event) {
       if (event.key === "Escape" && this.lightbox.open) {

@@ -386,10 +386,12 @@ button:hover {
 }
 
 .lightbox-inner img {
+  display: block;
   width: 100%;
   max-height: 78vh;
   object-fit: contain;
   border-radius: 18px;
+  margin: 0 auto;
   box-shadow: 0 20px 50px rgba(10, 10, 10, 0.45);
 }
 
@@ -403,12 +405,6 @@ button:hover {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-}
-
-.lightbox-hint {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #f7e9df;
 }
 
 @media (max-width: 960px) {
