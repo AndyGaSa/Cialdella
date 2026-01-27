@@ -405,6 +405,12 @@ button:hover {
   align-items: center;
 }
 
+.lightbox-hint {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #f7e9df;
+}
+
 @media (max-width: 960px) {
   .page {
     display: block;

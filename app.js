@@ -27,6 +27,7 @@ createApp({
       lightbox: {
         open: false,
         url: "",
+        hint: "",
       },
     };
   },
@@ -157,12 +158,51 @@ createApp({
     },
     openImage(url) {
       if (!url) return;
-      this.lightbox = { open: true, url };
+      this.lightbox = { open: true, url, hint: this.getLightboxHint() };
       document.body.classList.add("no-scroll");
     },
     closeLightbox() {
-      this.lightbox = { open: false, url: "" };
+      this.lightbox = { open: false, url: "", hint: "" };
       document.body.classList.remove("no-scroll");
+    },
+    getLightboxHint() {
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+      if (!isIOS) return "";
+      return "en iPhone: mantén pulsado la imagen y toca “Guardar en Fotos”.";
+    },
+    async downloadImage() {
+      if (!this.lightbox.url) return;
+
+      const url = this.lightbox.url;
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+
+      if (navigator.share && navigator.canShare) {
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const ext = blob.type.split("/")[1] || "jpg";
+          const file = new File([blob], `foto.${ext}`, { type: blob.type });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: "foto" });
+            return;
+          }
+        } catch (err) {
+          // fallback below
+        }
+      }
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "foto";
+      link.target = "_blank";
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      if (isIOS) {
+        this.lightbox.hint = "abre la imagen y luego “Guardar en Fotos”.";
+      }
     },
     handleKeydown(event) {
       if (event.key === "Escape" && this.lightbox.open) {
