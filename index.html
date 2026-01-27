@@ -76,9 +76,15 @@
           <p v-html="detailBody"></p>
           <div class="media-grid">
             <div v-for="(item, idx) in currentPost?.media || []" :key="idx" class="media-item">
-              <img v-if="item.type === 'image'" :src="item.url" :alt="item.caption || 'foto'" />
+              <img
+                v-if="item.type === 'image'"
+                class="media-photo"
+                :src="item.url"
+                :alt="item.caption || 'foto'"
+                @click="openImage(item.url)"
+              />
               <audio v-else-if="item.type === 'audio'" controls :src="item.url"></audio>
-              <div class="muted">{{ item.caption }}</div>
+              <div v-if="shouldShowCaption(item)" class="muted">{{ item.caption }}</div>
             </div>
           </div>
         </section>
@@ -104,6 +110,16 @@
           </form>
         </section>
       </main>
+
+      <div v-if="lightbox.open" class="lightbox" @click="closeLightbox">
+        <div class="lightbox-inner" @click.stop>
+          <img :src="lightbox.url" alt="foto" />
+          <div class="lightbox-actions">
+            <a class="primary" :href="lightbox.url" download>descargar</a>
+            <button class="ghost" type="button" @click="closeLightbox">cerrar</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

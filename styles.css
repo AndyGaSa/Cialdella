@@ -22,6 +22,10 @@ body {
   background: radial-gradient(circle at top left, #fff2f1 0%, #fef8f4 45%, #f6fbff 100%);
 }
 
+.no-scroll {
+  overflow: hidden;
+}
+
 [v-cloak] {
   display: none;
 }
@@ -327,6 +331,10 @@ button:hover {
   border-radius: 12px;
 }
 
+.media-photo {
+  cursor: zoom-in;
+}
+
 .media-item audio {
   width: 100%;
 }
@@ -358,6 +366,43 @@ button:hover {
 .hint {
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 12, 10, 0.72);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 30;
+}
+
+.lightbox-inner {
+  width: min(96vw, 720px);
+  display: grid;
+  gap: 14px;
+}
+
+.lightbox-inner img {
+  width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(10, 10, 10, 0.45);
+}
+
+.lightbox-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.lightbox-actions a {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 @media (max-width: 960px) {

@@ -24,6 +24,10 @@ createApp({
       pendingMedia: [],
       isEdit: false,
       errorMsg: "",
+      lightbox: {
+        open: false,
+        url: "",
+      },
     };
   },
   computed: {
@@ -36,7 +40,11 @@ createApp({
       this.errorMsg = "Supabase no está cargado. Abre la página con internet o en GitHub Pages.";
       return;
     }
+    window.addEventListener("keydown", this.handleKeydown);
     this.loadPosts();
+  },
+  beforeUnmount() {
+    window.removeEventListener("keydown", this.handleKeydown);
   },
   methods: {
     checkCode(code) {
@@ -60,6 +68,13 @@ createApp({
     excerpt(text = "") {
       const clean = text.replace(/\s+/g, " ").trim();
       return clean.length > 120 ? `${clean.slice(0, 117)}...` : clean;
+    },
+    isFileName(value = "") {
+      return /\.(png|jpe?g|gif|webp|mp3|wav|m4a)$/i.test(value.trim());
+    },
+    shouldShowCaption(item) {
+      if (!item?.caption) return false;
+      return !this.isFileName(item.caption);
     },
     async loadPosts() {
       const { data, error } = await supabaseClient
@@ -140,6 +155,20 @@ createApp({
     removeMedia(index) {
       this.pendingMedia.splice(index, 1);
     },
+    openImage(url) {
+      if (!url) return;
+      this.lightbox = { open: true, url };
+      document.body.classList.add("no-scroll");
+    },
+    closeLightbox() {
+      this.lightbox = { open: false, url: "" };
+      document.body.classList.remove("no-scroll");
+    },
+    handleKeydown(event) {
+      if (event.key === "Escape" && this.lightbox.open) {
+        this.closeLightbox();
+      }
+    },
     async savePost() {
       const trimmedCode = this.editor.code.trim();
       if (!this.checkCode(trimmedCode)) {
@@ -205,7 +234,7 @@ createApp({
         uploadedMedia.push({
           type: item.type,
           url: urlData.publicUrl,
-          caption: item.caption || item.name || "",
+          caption: item.caption || "",
         });
       }
 
