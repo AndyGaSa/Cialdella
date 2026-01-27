@@ -384,7 +384,6 @@ button:hover {
   backdrop-filter: blur(6px);
   display: grid;
   place-items: center;
-  padding: 20px;
   z-index: 30;
 }
 
@@ -392,6 +391,7 @@ button:hover {
   width: min(96vw, 720px);
   display: grid;
   gap: 14px;
+  padding: 20px;
 }
 
 .lightbox-inner img {
