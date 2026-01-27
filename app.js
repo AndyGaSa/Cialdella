@@ -1,4 +1,4 @@
-﻿const SUPABASE_URL = "https://ejfapcgmmbgdxakzqkfe.supabase.co";
+const SUPABASE_URL = "https://ejfapcgmmbgdxakzqkfe.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_RCdVm_zuyZQHyeKwLSvwsQ_DWnGCMY2";
 const EDIT_CODE = "tengo1bigote";
 
@@ -11,12 +11,13 @@ const { createApp } = window.Vue;
 
 createApp({
   data() {
+    const savedCode = sessionStorage.getItem("cialdella_code") || "";
     return {
       posts: [],
       view: "list",
       currentPost: null,
       editor: {
-        code: "",
+        code: savedCode,
         title: "",
         body: "",
       },
@@ -41,9 +42,11 @@ createApp({
     checkCode(code) {
       return code === EDIT_CODE;
     },
-    promptCode() {
-      const code = prompt("codigo secreto") || "";
-      return this.checkCode(code.trim());
+    getSavedCode() {
+      return sessionStorage.getItem("cialdella_code") || "";
+    },
+    rememberCode(code) {
+      sessionStorage.setItem("cialdella_code", code);
     },
     friendlyDate(dateString) {
       if (!dateString) return "";
@@ -94,7 +97,7 @@ createApp({
     goNew() {
       this.isEdit = false;
       this.currentPost = null;
-      this.editor = { code: "", title: "", body: "" };
+      this.editor = { code: this.getSavedCode(), title: "", body: "" };
       this.pendingMedia = [];
       this.view = "editor";
     },
@@ -102,7 +105,7 @@ createApp({
       this.isEdit = false;
       this.currentPost = null;
       this.editor = {
-        code: "",
+        code: this.getSavedCode(),
         title: "✨ hola fiona soy tu blog",
         body:
           "tucu tuc tucu tucu habla de ti de helado de chicles de sara de que te hace feliz.",
@@ -112,13 +115,9 @@ createApp({
     },
     openEdit() {
       if (!this.currentPost) return;
-      if (!this.promptCode()) {
-        alert("codigo secreto incorrecto");
-        return;
-      }
       this.isEdit = true;
       this.editor = {
-        code: "",
+        code: this.getSavedCode(),
         title: this.currentPost.title,
         body: this.currentPost.body,
       };
@@ -142,10 +141,12 @@ createApp({
       this.pendingMedia.splice(index, 1);
     },
     async savePost() {
-      if (!this.checkCode(this.editor.code.trim())) {
+      const trimmedCode = this.editor.code.trim();
+      if (!this.checkCode(trimmedCode)) {
         alert("codigo secreto incorrecto");
         return;
       }
+      this.rememberCode(trimmedCode);
 
       const title = this.editor.title.trim();
       const body = this.editor.body.trim();

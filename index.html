@@ -86,8 +86,8 @@
         <section v-if="view === 'editor'" class="editor">
           <h3>{{ isEdit ? 'editar post' : 'nuevo post' }}</h3>
           <form @submit.prevent="savePost">
-            <input v-model="editor.code" type="text" placeholder="codigo secreto" required />
-            <div class="hint">🔒 escribe el codigo para guardar cambios</div>
+            <input v-model="editor.code" type="password" placeholder="codigo secreto" required />
+            <div class="hint">🔒 solo se usa al guardar</div>
             <input v-model="editor.title" type="text" placeholder="titulo cute" required />
             <textarea v-model="editor.body" placeholder="escribe aqui" required></textarea>
             <div>

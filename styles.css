@@ -227,13 +227,14 @@ button:hover {
 .post-card::before {
   content: "";
   position: absolute;
-  inset: -20px;
+  inset: 0;
   background-image: var(--entry-bg);
   background-size: cover;
   background-position: center;
   filter: blur(2px) saturate(1);
   opacity: 0.36;
   z-index: 0;
+  border-radius: inherit;
 }
 
 .post-card > * {
@@ -269,13 +270,14 @@ button:hover {
 .post-detail::before {
   content: "";
   position: absolute;
-  inset: -30px;
+  inset: 0;
   background-image: var(--entry-bg);
   background-size: cover;
   background-position: center;
   filter: blur(2px) saturate(1);
   opacity: 0.36;
   z-index: 0;
+  border-radius: inherit;
 }
 
 .post-detail > * {
