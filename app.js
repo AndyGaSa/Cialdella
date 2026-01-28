@@ -13,7 +13,10 @@ createApp({
   data() {
     const savedCode = sessionStorage.getItem("cialdella_code") || "";
     return {
+      isMobile: window.matchMedia("(max-width: 960px)").matches,
       posts: [],
+      likes: [],
+      currentLike: null,
       view: "list",
       currentPost: null,
       editor: {
@@ -21,13 +24,24 @@ createApp({
         title: "",
         body: "",
       },
+      likesEditor: {
+        code: savedCode,
+        title: "",
+        description: "",
+        imageFile: null,
+        imagePreview: "",
+      },
+      likesEditorOpen: false,
       pendingMedia: [],
       isEdit: false,
+      isLikesLoading: false,
+      likesError: "",
       errorMsg: "",
       lightbox: {
         open: false,
         url: "",
       },
+      isLoading: false,
     };
   },
   computed: {
@@ -40,10 +54,20 @@ createApp({
       this.errorMsg = "Supabase no está cargado. Abre la página con internet o en GitHub Pages.";
       return;
     }
+    this.lightbox = { open: false, url: "" };
+    this.mediaQuery = window.matchMedia("(max-width: 960px)");
+    this.handleMediaChange = (event) => {
+      this.isMobile = event.matches;
+    };
+    this.mediaQuery.addEventListener("change", this.handleMediaChange);
     window.addEventListener("keydown", this.handleKeydown);
     this.loadPosts();
+    this.loadLikes();
   },
   beforeUnmount() {
+    if (this.mediaQuery && this.handleMediaChange) {
+      this.mediaQuery.removeEventListener("change", this.handleMediaChange);
+    }
     window.removeEventListener("keydown", this.handleKeydown);
   },
   methods: {
@@ -69,6 +93,12 @@ createApp({
       const clean = text.replace(/\s+/g, " ").trim();
       return clean.length > 120 ? `${clean.slice(0, 117)}...` : clean;
     },
+    likesExcerpt(text = "") {
+      const clean = text.replace(/\s+/g, " ").trim();
+      if (!clean) return "";
+      const words = clean.split(" ");
+      return words.length > 4 ? `${words.slice(0, 4).join(" ")}...` : clean;
+    },
     isFileName(value = "") {
       return /\.(png|jpe?g|gif|webp|mp3|wav|m4a)$/i.test(value.trim());
     },
@@ -77,6 +107,8 @@ createApp({
       return !this.isFileName(item.caption);
     },
     async loadPosts() {
+      this.lightbox = { open: false, url: "" };
+      this.isLoading = true;
       const { data, error } = await supabaseClient
         .from("posts")
         .select("id,title,body,media,created_at,updated_at")
@@ -84,11 +116,29 @@ createApp({
 
       if (error) {
         this.errorMsg = `No pude cargar los posts. ${error.message}`;
+        this.isLoading = false;
         return;
       }
 
       this.posts = data || [];
       this.view = "list";
+      this.isLoading = false;
+    },
+    async loadLikes() {
+      this.isLikesLoading = true;
+      const { data, error } = await supabaseClient
+        .from("likes")
+        .select("id,title,description,image_url,created_at")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        this.likesError = `No pude cargar los gustos. ${error.message}`;
+        this.isLikesLoading = false;
+        return;
+      }
+
+      this.likes = data || [];
+      this.isLikesLoading = false;
     },
     async openPost(id) {
       const { data, error } = await supabaseClient
@@ -108,6 +158,16 @@ createApp({
     async goList() {
       await this.loadPosts();
       this.view = "list";
+    },
+    async goLikesList() {
+      await this.loadLikes();
+      this.likesEditorOpen = false;
+      this.view = "likes";
+    },
+    openLike(item) {
+      if (!this.isMobile) return;
+      this.currentLike = item;
+      this.view = "likes-detail";
     },
     goNew() {
       this.isEdit = false;
@@ -151,6 +211,23 @@ createApp({
         }
       });
       event.target.value = "";
+    },
+    handleLikeImage(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      if (this.likesEditor.imagePreview) {
+        URL.revokeObjectURL(this.likesEditor.imagePreview);
+      }
+      this.likesEditor.imageFile = file;
+      this.likesEditor.imagePreview = URL.createObjectURL(file);
+      event.target.value = "";
+    },
+    clearLikeImage() {
+      if (this.likesEditor.imagePreview) {
+        URL.revokeObjectURL(this.likesEditor.imagePreview);
+      }
+      this.likesEditor.imageFile = null;
+      this.likesEditor.imagePreview = "";
     },
     removeMedia(index) {
       this.pendingMedia.splice(index, 1);
@@ -197,6 +274,64 @@ createApp({
       if (event.key === "Escape" && this.lightbox.open) {
         this.closeLightbox();
       }
+    },
+    toggleLikesEditor() {
+      this.likesEditorOpen = !this.likesEditorOpen;
+      if (this.likesEditorOpen && !this.likesEditor.code) {
+        this.likesEditor.code = this.getSavedCode();
+      }
+    },
+    async saveLike() {
+      const trimmedCode = this.likesEditor.code.trim();
+      if (!this.checkCode(trimmedCode)) {
+        alert("codigo secreto incorrecto");
+        return;
+      }
+      this.rememberCode(trimmedCode);
+
+      const title = this.likesEditor.title.trim();
+      const description = this.likesEditor.description.trim();
+      if (!title || !description) return;
+
+      let imageUrl = "";
+
+      if (this.likesEditor.imageFile) {
+        const ext = this.likesEditor.imageFile.name.split(".").pop();
+        const path = `likes/${crypto.randomUUID()}.${ext}`;
+        const { data, error } = await supabaseClient.storage
+          .from("media")
+          .upload(path, this.likesEditor.imageFile, { upsert: true });
+
+        if (error) {
+          alert(error.message);
+          return;
+        }
+
+        const { data: urlData } = supabaseClient.storage
+          .from("media")
+          .getPublicUrl(data.path);
+
+        imageUrl = urlData.publicUrl;
+      }
+
+      const { error } = await supabaseClient
+        .from("likes")
+        .insert({ title, description, image_url: imageUrl || null });
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      this.likesEditor = {
+        code: this.getSavedCode(),
+        title: "",
+        description: "",
+        imageFile: null,
+        imagePreview: "",
+      };
+      this.likesEditorOpen = false;
+      await this.loadLikes();
     },
     async savePost() {
       const trimmedCode = this.editor.code.trim();

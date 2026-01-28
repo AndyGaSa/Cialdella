@@ -26,16 +26,23 @@
           <h2>🤭 a darle al tucu tucu</h2>
           <button class="primary" @click="goSeed">contar tu vida</button>
         </div>
+
+        <div class="sidebar-card likes-card" v-if="view === 'list'">
+          <div class="likes-header">
+            <h2>cosas q le gustan a fiona</h2>
+            <button class="ghost mini" type="button" @click="goLikesList">bichear</button>
+          </div>
+        </div>
       </aside>
 
       <main class="content">
-        <div class="mobile-card">
+        <div class="mobile-card" v-if="view === 'list'">
           <h2>Diario de fiona</h2>
           <p class="muted">cronicas de un no ligue</p>
           <button class="primary" @click="goSeed">a darle al tucu tucu 🤭</button>
         </div>
 
-        <header class="topbar">
+        <header class="topbar" v-if="view === 'list'">
           <div>
             <h2>Diario de fiona</h2>
             <p class="muted">cronicas de un no ligue</p>
@@ -46,19 +53,97 @@
         </header>
 
         <section v-if="view === 'list'" class="post-grid">
+          <article v-if="isLoading" v-for="n in 6" :key="`skeleton-${n}`" class="post-card skeleton-card">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+          </article>
+
           <article v-for="post in posts" :key="post.id" class="post-card" @click="openPost(post.id)">
             <div class="date">{{ friendlyDate(post.created_at) }}</div>
             <h3>{{ post.title }}</h3>
             <p class="excerpt">{{ excerpt(post.body) }}</p>
           </article>
 
-          <div v-if="!posts.length" class="post-card">
+          <div v-if="!isLoading && !posts.length" class="post-card">
             <h3>✨ Todo listo</h3>
             <p class="excerpt">Aún no hay posts. Puedes crear el de hoy con el botón de la izquierda.</p>
             <button class="ghost" @click="goSeed">crear post de prueba</button>
           </div>
 
-          <p v-if="errorMsg" class="muted">{{ errorMsg }}</p>
+          <p v-if="!isLoading && errorMsg" class="muted">{{ errorMsg }}</p>
+        </section>
+
+        <section v-if="view === 'list'" class="likes-mobile">
+          <div class="likes-mobile-card">
+            <h3>cosas q le gustan a fiona</h3>
+            <button class="ghost" type="button" @click="goLikesList">bichear</button>
+          </div>
+        </section>
+
+        <section v-if="view === 'likes'" class="likes-list">
+          <header class="likes-topbar">
+            <div>
+              <h2>cosas q le gustan a fiona</h2>
+              <p class="muted">que no se me olviden!!!!!! (que tia + guay jjj)</p>
+            </div>
+            <div class="likes-actions">
+              <button class="ghost" @click="goList">← volver</button>
+              <button class="primary" type="button" @click="toggleLikesEditor">
+                {{ likesEditorOpen ? 'cerrar' : 'añadir' }}
+              </button>
+            </div>
+          </header>
+          <div class="likes-grid">
+            <div v-if="isLikesLoading" class="likes-skeleton">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line title"></div>
+              <div class="skeleton-line"></div>
+            </div>
+            <div v-else-if="!likes.length" class="likes-empty">
+              <p class="muted">todavía no hay gustos. agrega el primero 🤍</p>
+            </div>
+            <article v-for="item in likes" :key="item.id" class="likes-item" @click="openLike(item)">
+              <img v-if="item.image_url" :src="item.image_url" :alt="item.title" />
+              <div>
+                <h3>{{ item.title }}</h3>
+                <p>{{ isMobile ? likesExcerpt(item.description) : item.description }}</p>
+              </div>
+            </article>
+          </div>
+          <form v-if="likesEditorOpen" class="likes-form" @submit.prevent="saveLike">
+            <input v-model="likesEditor.code" type="password" placeholder="codigo secreto" required />
+            <input v-model="likesEditor.title" type="text" placeholder="titulo del gusto" required />
+            <textarea v-model="likesEditor.description" placeholder="descripcion cortita" required></textarea>
+            <div class="likes-upload">
+              <label>foto del album (opcional)</label>
+              <input type="file" accept="image/*" @change="handleLikeImage" />
+              <div v-if="likesEditor.imagePreview" class="likes-preview">
+                <img :src="likesEditor.imagePreview" alt="preview" />
+                <button class="ghost mini" type="button" @click="clearLikeImage">quitar</button>
+              </div>
+            </div>
+            <button class="primary" type="submit">guardar gusto</button>
+          </form>
+        </section>
+
+        <section v-if="view === 'likes-detail'" class="likes-detail">
+          <div class="actions">
+            <div>
+              <div class="date">{{ friendlyDate(currentLike?.created_at) }}</div>
+            </div>
+            <div class="detail-actions">
+              <button class="ghost" @click="goLikesList">← volver</button>
+            </div>
+          </div>
+          <h3>{{ currentLike?.title }}</h3>
+          <p>{{ currentLike?.description }}</p>
+          <div class="media-grid" v-if="currentLike?.image_url">
+            <div class="media-item">
+              <img class="media-photo" :src="currentLike.image_url" :alt="currentLike.title" @click="openImage(currentLike.image_url)" />
+            </div>
+          </div>
         </section>
 
         <section v-if="view === 'detail'" class="post-detail">
@@ -111,7 +196,12 @@
         </section>
       </main>
 
-      <div v-if="lightbox.open" class="lightbox" @click="closeLightbox">
+      <div
+        class="lightbox"
+        @click="closeLightbox"
+        style="display: none"
+        :style="{ display: lightbox.open && !isLoading ? 'grid' : 'none' }"
+      >
         <div class="lightbox-inner" @click.stop>
           <img :src="lightbox.url" alt="foto" />
           <div class="lightbox-actions">
