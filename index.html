@@ -27,7 +27,7 @@
           <button class="primary" @click="goSeed">contar tu vida</button>
         </div>
 
-        <div class="sidebar-card likes-card" v-if="view === 'list'">
+        <div class="sidebar-card likes-card" v-if="view === 'list'" :style="{ background: likesTheme.cardBg }">
           <div class="likes-header">
             <h2>cosas q le gustan a fiona</h2>
             <button class="ghost mini" type="button" @click="goLikesList">bichear</button>
@@ -76,14 +76,14 @@
         </section>
 
         <section v-if="view === 'list'" class="likes-mobile">
-          <div class="likes-mobile-card">
+          <div class="likes-mobile-card" :style="{ background: likesTheme.cardBg }">
             <h3>cosas q le gustan a fiona</h3>
             <button class="ghost" type="button" @click="goLikesList">bichear</button>
           </div>
         </section>
 
         <section v-if="view === 'likes'" class="likes-list">
-          <header class="likes-topbar">
+          <header class="likes-topbar" :style="{ background: likesTheme.cardBg }">
             <div>
               <h2>cosas q le gustan a fiona</h2>
               <p class="muted">que no se me olviden!!!!!! (que tia + guay jjj)</p>
@@ -128,13 +128,14 @@
           </form>
         </section>
 
-        <section v-if="view === 'likes-detail'" class="likes-detail">
+        <section v-if="view === 'likes-detail'" class="post-detail likes-detail">
           <div class="actions">
             <div>
               <div class="date">{{ friendlyDate(currentLike?.created_at) }}</div>
             </div>
             <div class="detail-actions">
               <button class="ghost" @click="goLikesList">← volver</button>
+              <button class="icon-btn" @click="openLikeEdit">✏️ editar</button>
             </div>
           </div>
           <h3>{{ currentLike?.title }}</h3>
