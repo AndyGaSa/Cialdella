@@ -116,15 +116,45 @@ body {
 }
 
 .likes-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+}
+
+.likes-header h2 span {
+  display: block;
 }
 
 .mini {
   padding: 6px 12px;
   font-size: 0.85rem;
+}
+
+.icon-only {
+  width: 96px;
+  height: 96px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  box-shadow: none;
+}
+
+.icon-only img {
+  width: 116px;
+  height: 116px;
+  object-fit: contain;
+}
+
+.ghost.icon-only {
+  background: transparent;
+}
+
+.icon-only:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .likes-grid {
@@ -210,6 +240,21 @@ body {
   border-radius: var(--radius);
   padding: 16px;
   box-shadow: var(--shadow);
+}
+
+.likes-mobile-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.likes-mobile-header h3 span {
+  display: block;
+}
+
+.likes-topbar h2 span {
+  display: block;
 }
 
 .likes-mobile-card h3 {
@@ -712,3 +757,18 @@ button:hover {
     height: 64px;
   }
 }
+
+@media (min-width: 961px) {
+  .icon-only {
+    width: 112px;
+    height: 112px;
+  }
+
+  .icon-only img {
+    width: 138px;
+    height: 138px;
+  }
+}
+  .likes-header h2 {
+    font-size: 1.1rem;
+  }

@@ -14,7 +14,7 @@
       <aside class="sidebar">
         <div class="brand">
           <div class="brand-mark">
-            <img class="brand-photo" src="https://ejfapcgmmbgdxakzqkfe.supabase.co/storage/v1/object/public/media/FOTO.jpg" alt="foto de fiona" />
+            <img class="brand-photo" src="assets/foto.jpg" alt="foto de fiona" />
           </div>
           <div class="brand-text">
             <h1>CIALDELLA</h1>
@@ -29,8 +29,10 @@
 
         <div class="sidebar-card likes-card" v-if="view === 'list'" :style="{ background: likesTheme.cardBg }">
           <div class="likes-header">
-            <h2>cosas q le gustan a fiona</h2>
-            <button class="ghost mini" type="button" @click="goLikesList">bichear</button>
+            <h2><span>cosas q le 💖</span><span>a Fiona</span></h2>
+            <button class="ghost mini icon-only" type="button" @click="goLikesList" aria-label="bichear">
+              <img src="assets/ojo.png" alt="" />
+            </button>
           </div>
         </div>
       </aside>
@@ -77,15 +79,19 @@
 
         <section v-if="view === 'list'" class="likes-mobile">
           <div class="likes-mobile-card" :style="{ background: likesTheme.cardBg }">
-            <h3>cosas q le gustan a fiona</h3>
-            <button class="ghost" type="button" @click="goLikesList">bichear</button>
+            <div class="likes-mobile-header">
+              <h3><span>cosas q le 💖</span><span>a Fiona</span></h3>
+              <button class="ghost icon-only" type="button" @click="goLikesList" aria-label="bichear">
+                <img src="assets/ojo.png" alt="" />
+              </button>
+            </div>
           </div>
         </section>
 
         <section v-if="view === 'likes'" class="likes-list">
           <header class="likes-topbar" :style="{ background: likesTheme.cardBg }">
             <div>
-              <h2>cosas q le gustan a fiona</h2>
+              <h2><span>cosas q le 💖</span><span>a Fiona</span></h2>
               <p class="muted">que no se me olviden!!!!!! (que tia + guay jjj)</p>
             </div>
             <div class="likes-actions">
