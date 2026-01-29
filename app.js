@@ -94,6 +94,9 @@ createApp({
     window.removeEventListener("keydown", this.handleKeydown);
   },
   methods: {
+    scrollToTop() {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    },
     checkCode(code) {
       return code === EDIT_CODE;
     },
@@ -206,6 +209,7 @@ createApp({
 
       this.currentPost = data;
       this.view = "detail";
+      this.scrollToTop();
     },
     async goList() {
       await this.loadPosts();

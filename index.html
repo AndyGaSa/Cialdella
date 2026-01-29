@@ -14,7 +14,7 @@
       <aside class="sidebar">
         <div class="brand">
           <div class="brand-mark">
-            <img class="brand-photo" src="assets/foto.jpg" alt="foto de fiona" />
+            <img v-if="view === 'list'" class="brand-photo" src="assets/foto.jpg" alt="foto de fiona" />
           </div>
           <div class="brand-text">
             <h1>CIALDELLA</h1>
@@ -185,7 +185,7 @@
           <div class="actions">
             <div>
               <div class="date">{{ friendlyDate(currentPost?.created_at) }}</div>
-              <div class="muted" v-if="currentPost?.updated_at">editado {{ friendlyDate(currentPost.updated_at) }}</div>
+              <div class="muted edited-at" v-if="currentPost?.updated_at">editado {{ friendlyDate(currentPost.updated_at) }}</div>
             </div>
             <div class="detail-actions">
               <button class="ghost" @click="goList">← volver</button>
@@ -210,17 +210,24 @@
         </section>
 
         <section v-if="view === 'editor'" class="editor">
-          <h3>{{ isEdit ? 'editar post' : 'nuevo post' }}</h3>
+          <div class="editor-header">
+            <button class="ghost back-btn" type="button" @click="goList">
+              <span class="arrow">←</span><span class="back-text"> volver</span>
+            </button>
+            <div class="editor-title">Nuevo post!!!!</div>
+          </div>
           <form @submit.prevent="savePost">
+            <div class="hint">Contraseña:</div>
             <input v-model="editor.code" type="text" placeholder="codigo secreto" required />
-            <div class="hint">🔒 solo se usa al guardar</div>
+            <div class="hint">Que titulo le ponemos?</div>
             <input v-model="editor.title" type="text" placeholder="titulo cute" required />
+            <div class="hint">Donde hablas:</div>
             <textarea v-model="editor.body" placeholder="escribe aqui" required></textarea>
-            <div>
-              <label>Adjuntar imagenes o audios</label>
+            <div class="media-upload">
+              <label class="hint">Adjuntar imagenes o audios 🎨</label>
               <input type="file" multiple accept="image/*,audio/*" @change="handleFiles" />
             </div>
-            <div class="media-list">
+            <div class="media-list" v-if="pendingMedia.length">
               <div v-for="(item, idx) in pendingMedia" :key="idx" class="media-chip">
                 <span>{{ item.type === 'image' ? '🖼️' : '🔊' }} {{ item.caption || item.name || 'archivo' }}</span>
                 <button class="ghost" type="button" @click="removeMedia(idx)">x</button>
