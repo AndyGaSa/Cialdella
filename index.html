@@ -115,15 +115,15 @@
                 <span class="arrow">←</span><span class="back-text"> volver</span>
               </button>
               <div class="likes-toggle">
-                <button class="ghost" :class="{ active: likesOwner === 'fiona' }" @click="setLikesOwner('fiona')">Fiona</button>
-                <button class="ghost" :class="{ active: likesOwner === 'andy' }" @click="setLikesOwner('andy')">Andy</button>
+                <button class="ghost" :class="{ active: likesOwner === 'fiona' }" @click="setLikesOwner('fiona')">{{ likesOwnerLabels.fiona }}</button>
+                <button class="ghost" :class="{ active: likesOwner === 'andy' }" @click="setLikesOwner('andy')">{{ likesOwnerLabels.andy }}</button>
               </div>
               <button class="primary" type="button" @click="toggleLikesEditor">
                 {{ likesEditorOpen ? 'cerrar' : 'añadir' }}
               </button>
             </div>
           </header>
-          <div class="likes-grid">
+          <div class="likes-grid" v-if="!likesEditorOpen">
             <div v-if="isLikesLoading" class="likes-skeleton">
               <div class="skeleton-line short"></div>
               <div class="skeleton-line title"></div>
@@ -141,15 +141,17 @@
             </article>
           </div>
           <form v-if="likesEditorOpen" class="likes-form" @submit.prevent="saveLike">
-            <div class="likes-owner-toggle">
-              <button class="ghost" type="button" :class="{ active: likesOwner === 'fiona' }" @click="setLikesOwner('fiona')">Fiona</button>
-              <button class="ghost" type="button" :class="{ active: likesOwner === 'andy' }" @click="setLikesOwner('andy')">Andy</button>
+            <div class="likes-owner-row">
+              <span class="likes-owner-label">like para:</span>
+              <div class="likes-owner-toggle">
+                <button class="ghost" type="button" :class="{ active: likesOwner === 'fiona' }" @click="setLikesOwner('fiona')">{{ likesOwnerLabels.fiona }}</button>
+                <button class="ghost" type="button" :class="{ active: likesOwner === 'andy' }" @click="setLikesOwner('andy')">{{ likesOwnerLabels.andy }}</button>
+              </div>
             </div>
-            <input v-model="likesEditor.code" type="password" placeholder="codigo secreto" required />
+            <input v-model="likesEditor.code" type="text" placeholder="codigo secreto" required />
             <input v-model="likesEditor.title" type="text" placeholder="titulo del gusto" required />
             <textarea v-model="likesEditor.description" placeholder="descripcion cortita" required></textarea>
             <div class="likes-upload">
-              <label>foto del album (opcional)</label>
               <input type="file" accept="image/*" @change="handleLikeImage" />
               <div v-if="likesEditor.imagePreview" class="likes-preview">
                 <img :src="likesEditor.imagePreview" alt="preview" />
@@ -210,7 +212,7 @@
         <section v-if="view === 'editor'" class="editor">
           <h3>{{ isEdit ? 'editar post' : 'nuevo post' }}</h3>
           <form @submit.prevent="savePost">
-            <input v-model="editor.code" type="password" placeholder="codigo secreto" required />
+            <input v-model="editor.code" type="text" placeholder="codigo secreto" required />
             <div class="hint">🔒 solo se usa al guardar</div>
             <input v-model="editor.title" type="text" placeholder="titulo cute" required />
             <textarea v-model="editor.body" placeholder="escribe aqui" required></textarea>

@@ -212,6 +212,18 @@ body {
   margin-top: 12px;
 }
 
+.likes-owner-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.likes-owner-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .likes-owner-toggle {
   display: inline-flex;
   gap: 6px;
@@ -425,6 +437,7 @@ body {
 
 input[type="email"],
 input[type="text"],
+input[type="file"],
 textarea {
   width: 100%;
   border-radius: 12px;
@@ -432,6 +445,22 @@ textarea {
   padding: 10px 12px;
   font-family: inherit;
   background: var(--bg-soft);
+}
+
+input[type="file"] {
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  border: none;
+  border-radius: 0;
+  padding: 8px 12px;
+  font-family: inherit;
+  background: var(--bg-soft);
+  color: var(--ink);
+  cursor: pointer;
 }
 
 textarea {
@@ -784,6 +813,10 @@ button:hover {
     margin-top: 12px;
   }
 
+  .likes-detail {
+    margin-top: 12px;
+  }
+
   .content {
     gap: 12px;
   }
@@ -811,22 +844,31 @@ button:hover {
 
   .likes-actions {
     width: 100%;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: 6px;
   }
 
   .likes-toggle {
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     justify-content: space-between;
   }
 
   .likes-toggle .ghost {
     flex: 1 1 0;
     text-align: center;
+    padding: 6px 10px;
+    font-size: 0.85rem;
   }
 
   .back-text {
     display: none;
+  }
+
+  .likes-actions .primary {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
 
   .likes-list .likes-grid {

@@ -18,6 +18,10 @@ createApp({
       likes: [],
       currentLike: null,
       likesOwner: "fiona",
+      likesEmojis: {
+        fiona: "🌸",
+        andy: "🤘",
+      },
       likesTheme: {
         fiona: "",
         andy: "",
@@ -59,6 +63,12 @@ createApp({
     likesOwnerName() {
       return this.likesOwner === "andy" ? "Andy" : "Fiona";
     },
+    likesOwnerLabels() {
+      return {
+        fiona: `Fio ${this.likesEmojis.fiona}`,
+        andy: `Andy ${this.likesEmojis.andy}`,
+      };
+    },
   },
   mounted() {
     if (!hasSupabase) {
@@ -73,6 +83,7 @@ createApp({
     this.mediaQuery.addEventListener("change", this.handleMediaChange);
     window.addEventListener("keydown", this.handleKeydown);
     this.setLikesTheme();
+    this.setLikesEmojis();
     this.loadPosts();
     this.loadLikes();
   },
@@ -117,6 +128,14 @@ createApp({
       this.likesTheme = {
         fiona,
         andy: pick(fiona),
+      };
+    },
+    setLikesEmojis() {
+      const fiona = ["🌸", "🌺", "🌷"];
+      const andy = ["🤘", "🤠", "😇"];
+      this.likesEmojis = {
+        fiona: fiona[Math.floor(Math.random() * fiona.length)],
+        andy: andy[Math.floor(Math.random() * andy.length)],
       };
     },
     excerpt(text = "") {
