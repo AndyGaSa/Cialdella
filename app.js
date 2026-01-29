@@ -17,8 +17,10 @@ createApp({
       posts: [],
       likes: [],
       currentLike: null,
+      likesOwner: "fiona",
       likesTheme: {
-        cardBg: "",
+        fiona: "",
+        andy: "",
       },
       view: "list",
       currentPost: null,
@@ -53,6 +55,9 @@ createApp({
   computed: {
     detailBody() {
       return (this.currentPost?.body || "").replace(/\n/g, "<br />");
+    },
+    likesOwnerName() {
+      return this.likesOwner === "andy" ? "Andy" : "Fiona";
     },
   },
   mounted() {
@@ -104,9 +109,14 @@ createApp({
         "linear-gradient(140deg, #f7ede2 0%, #84a59d 100%)",
         "linear-gradient(140deg, #f5cac3 0%, #f28482 100%)",
       ];
-      const pick = () => palette[Math.floor(Math.random() * palette.length)];
+      const pick = (exclude) => {
+        const options = palette.filter((item) => item !== exclude);
+        return options[Math.floor(Math.random() * options.length)];
+      };
+      const fiona = pick();
       this.likesTheme = {
-        cardBg: pick(),
+        fiona,
+        andy: pick(fiona),
       };
     },
     excerpt(text = "") {
@@ -144,11 +154,14 @@ createApp({
       this.view = "list";
       this.isLoading = false;
     },
-    async loadLikes() {
+    async loadLikes(owner = this.likesOwner) {
+      this.likesOwner = owner;
+      this.currentLike = null;
       this.isLikesLoading = true;
       const { data, error } = await supabaseClient
         .from("likes")
-        .select("id,title,description,image_url,created_at")
+        .select("id,title,description,image_url,created_at,person")
+        .eq("person", owner)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -179,10 +192,14 @@ createApp({
       await this.loadPosts();
       this.view = "list";
     },
-    async goLikesList() {
-      await this.loadLikes();
+    async goLikesList(owner = this.likesOwner) {
+      await this.loadLikes(owner);
       this.likesEditorOpen = false;
       this.view = "likes";
+    },
+    async setLikesOwner(owner) {
+      if (this.likesOwner === owner) return;
+      await this.loadLikes(owner);
     },
     openLike(item) {
       if (!this.isMobile) return;
@@ -310,6 +327,7 @@ createApp({
     },
     openLikeEdit() {
       if (!this.currentLike) return;
+      this.likesOwner = this.currentLike.person || this.likesOwner;
       this.likesEditorOpen = true;
       this.view = "likes";
       this.likesEditor = {
@@ -359,7 +377,12 @@ createApp({
       if (this.likesEditor.id) {
         const { error } = await supabaseClient
           .from("likes")
-          .update({ title, description, image_url: imageUrl || null })
+          .update({
+            title,
+            description,
+            image_url: imageUrl || null,
+            person: this.likesOwner,
+          })
           .eq("id", this.likesEditor.id);
 
         if (error) {
@@ -369,7 +392,12 @@ createApp({
       } else {
         const { error } = await supabaseClient
           .from("likes")
-          .insert({ title, description, image_url: imageUrl || null });
+          .insert({
+            title,
+            description,
+            image_url: imageUrl || null,
+            person: this.likesOwner,
+          });
 
         if (error) {
           alert(error.message);

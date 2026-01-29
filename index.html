@@ -27,11 +27,19 @@
           <button class="primary" @click="goSeed">contar tu vida</button>
         </div>
 
-        <div class="sidebar-card likes-card" v-if="view === 'list'" :style="{ background: likesTheme.cardBg }">
+        <div class="sidebar-card likes-card" v-if="view === 'list'" :style="{ background: likesTheme.fiona }" @click="goLikesList('fiona')">
           <div class="likes-header">
             <h2><span>cosas q le 💖</span><span>a Fiona</span></h2>
-            <button class="ghost mini icon-only" type="button" @click="goLikesList" aria-label="bichear">
+            <button class="ghost mini icon-only" type="button" @click.stop="goLikesList('fiona')" aria-label="bichear">
               <img src="assets/ojo.png" alt="" />
+            </button>
+          </div>
+        </div>
+        <div class="sidebar-card likes-card" v-if="view === 'list'" :style="{ background: likesTheme.andy }" @click="goLikesList('andy')">
+          <div class="likes-header">
+            <h2><span>cosas q le 💖</span><span>a Andy</span></h2>
+            <button class="ghost mini icon-only" type="button" @click.stop="goLikesList('andy')" aria-label="bichear">
+              <img src="assets/spidy.png" alt="" />
             </button>
           </div>
         </div>
@@ -78,24 +86,38 @@
         </section>
 
         <section v-if="view === 'list'" class="likes-mobile">
-          <div class="likes-mobile-card" :style="{ background: likesTheme.cardBg }">
+          <div class="likes-mobile-card" :style="{ background: likesTheme.fiona }" @click="goLikesList('fiona')">
             <div class="likes-mobile-header">
               <h3><span>cosas q le 💖</span><span>a Fiona</span></h3>
-              <button class="ghost icon-only" type="button" @click="goLikesList" aria-label="bichear">
+              <button class="ghost icon-only" type="button" @click.stop="goLikesList('fiona')" aria-label="bichear">
                 <img src="assets/ojo.png" alt="" />
+              </button>
+            </div>
+          </div>
+          <div class="likes-mobile-card" :style="{ background: likesTheme.andy }" @click="goLikesList('andy')">
+            <div class="likes-mobile-header">
+              <h3><span>cosas q le 💖</span><span>a Andy</span></h3>
+              <button class="ghost icon-only" type="button" @click.stop="goLikesList('andy')" aria-label="bichear">
+                <img src="assets/spidy.png" alt="" />
               </button>
             </div>
           </div>
         </section>
 
         <section v-if="view === 'likes'" class="likes-list">
-          <header class="likes-topbar" :style="{ background: likesTheme.cardBg }">
+          <header class="likes-topbar" :style="{ background: likesTheme[likesOwner] }">
             <div>
-              <h2><span>cosas q le 💖</span><span>a Fiona</span></h2>
-              <p class="muted">que no se me olviden!!!!!! (que tia + guay jjj)</p>
+              <h2><span>cosas q le 💖</span><span>a {{ likesOwnerName }}</span></h2>
+              <p class="muted">{{ likesOwner === 'andy' ? 'fiona me ha pedido que ponga mi seccion....' : 'que no se me olviden!!!!!! (que tia + guay jjj)' }}</p>
             </div>
             <div class="likes-actions">
-              <button class="ghost" @click="goList">← volver</button>
+              <button class="ghost back-btn" @click="goList">
+                <span class="arrow">←</span><span class="back-text"> volver</span>
+              </button>
+              <div class="likes-toggle">
+                <button class="ghost" :class="{ active: likesOwner === 'fiona' }" @click="setLikesOwner('fiona')">Fiona</button>
+                <button class="ghost" :class="{ active: likesOwner === 'andy' }" @click="setLikesOwner('andy')">Andy</button>
+              </div>
               <button class="primary" type="button" @click="toggleLikesEditor">
                 {{ likesEditorOpen ? 'cerrar' : 'añadir' }}
               </button>
@@ -119,6 +141,10 @@
             </article>
           </div>
           <form v-if="likesEditorOpen" class="likes-form" @submit.prevent="saveLike">
+            <div class="likes-owner-toggle">
+              <button class="ghost" type="button" :class="{ active: likesOwner === 'fiona' }" @click="setLikesOwner('fiona')">Fiona</button>
+              <button class="ghost" type="button" :class="{ active: likesOwner === 'andy' }" @click="setLikesOwner('andy')">Andy</button>
+            </div>
             <input v-model="likesEditor.code" type="password" placeholder="codigo secreto" required />
             <input v-model="likesEditor.title" type="text" placeholder="titulo del gusto" required />
             <textarea v-model="likesEditor.description" placeholder="descripcion cortita" required></textarea>

@@ -113,6 +113,19 @@ body {
 
 .likes-card {
   background: transparent;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 44px rgba(22, 20, 18, 0.14);
+}
+
+.likes-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .likes-header {
@@ -167,9 +180,10 @@ body {
   grid-template-columns: 64px 1fr;
   gap: 12px;
   align-items: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.98);
   border-radius: 16px;
   padding: 10px;
+  box-shadow: 0 10px 24px rgba(22, 20, 18, 0.12);
 }
 
 .likes-item img {
@@ -196,6 +210,25 @@ body {
   display: grid;
   gap: 10px;
   margin-top: 12px;
+}
+
+.likes-owner-toggle {
+  display: inline-flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 4px;
+  border-radius: 999px;
+  justify-self: start;
+}
+
+.likes-owner-toggle .ghost {
+  padding: 8px 14px;
+  box-shadow: none;
+}
+
+.likes-owner-toggle .ghost.active {
+  background: var(--ink);
+  color: #fff;
 }
 
 .likes-upload label {
@@ -233,6 +266,7 @@ body {
 
 .likes-mobile {
   display: none;
+  gap: 12px;
 }
 
 .likes-mobile-card {
@@ -240,6 +274,19 @@ body {
   border-radius: var(--radius);
   padding: 16px;
   box-shadow: var(--shadow);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 44px rgba(22, 20, 18, 0.14);
+}
+
+.likes-mobile-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .likes-mobile-header {
@@ -300,6 +347,25 @@ body {
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.likes-toggle {
+  display: inline-flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.likes-toggle .ghost {
+  background: transparent;
+  padding: 8px 14px;
+  box-shadow: none;
+}
+
+.likes-toggle .ghost.active {
+  background: var(--ink);
+  color: #fff;
 }
 
 .likes-detail {
@@ -731,7 +797,7 @@ button:hover {
   }
 
   .likes-mobile {
-    display: block;
+    display: grid;
     margin: 0;
   }
 
@@ -741,6 +807,26 @@ button:hover {
     gap: 10px;
     background: var(--card);
     margin-top: 12px;
+  }
+
+  .likes-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .likes-toggle {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .likes-toggle .ghost {
+    flex: 1 1 0;
+    text-align: center;
+  }
+
+  .back-text {
+    display: none;
   }
 
   .likes-list .likes-grid {
