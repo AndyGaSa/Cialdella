@@ -94,6 +94,18 @@ createApp({
     window.removeEventListener("keydown", this.handleKeydown);
   },
   methods: {
+    autoResize(event) {
+      const el = event.target;
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    },
+    resizeEditorBody() {
+      const el = this.$refs.editorBody;
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    },
     scrollToTop() {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     },
@@ -235,6 +247,7 @@ createApp({
       this.editor = { code: this.getSavedCode(), title: "", body: "" };
       this.pendingMedia = [];
       this.view = "editor";
+      this.$nextTick(() => this.resizeEditorBody());
     },
     goSeed() {
       this.isEdit = false;
@@ -247,6 +260,7 @@ createApp({
       };
       this.pendingMedia = [];
       this.view = "editor";
+      this.$nextTick(() => this.resizeEditorBody());
     },
     openEdit() {
       if (!this.currentPost) return;
@@ -260,6 +274,7 @@ createApp({
         ? [...this.currentPost.media]
         : [];
       this.view = "editor";
+      this.$nextTick(() => this.resizeEditorBody());
     },
     handleFiles(event) {
       const files = Array.from(event.target.files || []);

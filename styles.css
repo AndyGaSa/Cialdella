@@ -216,6 +216,13 @@ body {
   margin-top: 12px;
 }
 
+.card-form {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+
 .likes-owner-row {
   display: flex;
   align-items: center;
@@ -470,6 +477,7 @@ input[type="file"]::file-selector-button {
 textarea {
   min-height: 160px;
   resize: vertical;
+  overflow: hidden;
 }
 
 button {
@@ -870,6 +878,10 @@ button:hover {
   }
 
   .post-detail {
+    margin-top: 12px;
+  }
+
+  .editor {
     margin-top: 12px;
   }
 

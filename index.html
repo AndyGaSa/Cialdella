@@ -140,7 +140,7 @@
               </div>
             </article>
           </div>
-          <form v-if="likesEditorOpen" class="likes-form" @submit.prevent="saveLike">
+          <form v-if="likesEditorOpen" class="likes-form card-form" @submit.prevent="saveLike">
             <div class="likes-owner-row">
               <span class="likes-owner-label">like para:</span>
               <div class="likes-owner-toggle">
@@ -214,7 +214,7 @@
             <button class="ghost back-btn" type="button" @click="goList">
               <span class="arrow">←</span><span class="back-text"> volver</span>
             </button>
-            <div class="editor-title">Nuevo post!!!!</div>
+            <div class="editor-title">{{ isEdit ? 'hagamos cambiios jj' : 'Nuevo post!!!!' }}</div>
           </div>
           <form @submit.prevent="savePost">
             <div class="hint">Contraseña:</div>
@@ -222,7 +222,7 @@
             <div class="hint">Que titulo le ponemos?</div>
             <input v-model="editor.title" type="text" placeholder="titulo cute" required />
             <div class="hint">Donde hablas:</div>
-            <textarea v-model="editor.body" placeholder="escribe aqui" required></textarea>
+            <textarea ref="editorBody" v-model="editor.body" placeholder="escribe aqui" required @input="autoResize($event)"></textarea>
             <div class="media-upload">
               <label class="hint">Adjuntar imagenes o audios 🎨</label>
               <input type="file" multiple accept="image/*,audio/*" @change="handleFiles" />
