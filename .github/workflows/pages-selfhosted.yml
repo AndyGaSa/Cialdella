@@ -17,8 +17,6 @@ concurrency:
 jobs:
   deploy:
     runs-on: [self-hosted, windows]
-    env:
-      PATH: C:\Program Files\Git\bin;C:\Program Files\Git\usr\bin;${{ env.PATH }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -34,6 +32,12 @@ jobs:
           Copy-Item assets -Destination _site\assets -Recurse -Force
 
       - uses: actions/configure-pages@v5
+      - name: Ensure Git Bash is first on PATH
+        shell: powershell
+        run: |
+          "C:\Program Files\Git\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "C:\Program Files\Git\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          tar --version
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
