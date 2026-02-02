@@ -57,9 +57,6 @@ createApp({
     };
   },
   computed: {
-    detailBody() {
-      return (this.currentPost?.body || "").replace(/\n/g, "<br />");
-    },
     likesOwnerName() {
       return this.likesOwner === "andy" ? "Andy" : "Fiona";
     },
@@ -94,17 +91,103 @@ createApp({
     window.removeEventListener("keydown", this.handleKeydown);
   },
   methods: {
-    autoResize(event) {
-      const el = event.target;
-      if (!el) return;
-      el.style.height = "auto";
-      el.style.height = `${el.scrollHeight}px`;
+    hasHtml(value = "") {
+      return /<\/?[a-z][\s\S]*>/i.test(value);
     },
-    resizeEditorBody() {
-      const el = this.$refs.editorBody;
+    plainTextLines(html = "") {
+      if (!html) return "";
+      const holder = document.createElement("div");
+      const withBreaks = html
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/p>/gi, "\n")
+        .replace(/<\/div>/gi, "\n");
+      holder.innerHTML = withBreaks;
+      return (holder.innerText || holder.textContent || "")
+        .replace(/\r/g, "")
+        .replace(/\n\s*\n+/g, "\n")
+        .trim();
+    },
+    plainTextInline(html = "") {
+      if (!html) return "";
+      const holder = document.createElement("div");
+      const withSpaces = html
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<\/(p|div|li|h[1-6])>/gi, " ");
+      holder.innerHTML = withSpaces;
+      return (holder.innerText || holder.textContent || "")
+        .replace(/\s+/g, " ")
+        .trim();
+    },
+    sealLetter(html = "") {
+      const text = this.plainTextLines(html);
+      if (!text) return "";
+      const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+      if (!lines.length) return "";
+      const lastLine = lines[lines.length - 1];
+      const cleaned = lastLine.replace(/[^a-zA-Z]+$/g, "");
+      if (!cleaned) return "";
+      const lastChar = cleaned.slice(-1).toLowerCase();
+      if (lastChar === "a" || lastChar === "f") return lastChar.toUpperCase();
+      return "";
+    },
+    renderContent(value = "") {
+      if (!value) return "";
+      if (this.hasHtml(value)) return value;
+      const holder = document.createElement("div");
+      holder.textContent = value;
+      return holder.innerHTML.replace(/\n/g, "<br />");
+    },
+    setEditorContent(target, html) {
+      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
       if (!el) return;
-      el.style.height = "auto";
-      el.style.height = `${el.scrollHeight}px`;
+      el.innerHTML = this.renderContent(html || "");
+    },
+    syncEditorHtml(target) {
+      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
+      if (!el) return;
+      const html = el.innerHTML || "";
+      if (target === "likes") {
+        this.likesEditor.description = html;
+      } else {
+        this.editor.body = html;
+      }
+    },
+    applyFormat(command, value, target) {
+      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
+      if (!el) return;
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+      el.focus();
+      if (command === "hiliteColor") {
+        const next = value;
+        document.execCommand("hiliteColor", false, next);
+        document.execCommand("backColor", false, next);
+      } else {
+        document.execCommand(command, false, value);
+      }
+      this.syncEditorHtml(target);
+    },
+    normalizeColor(value = "") {
+      if (!value) return "";
+      const lower = value.toLowerCase().trim();
+      if (lower === "transparent") return "transparent";
+      if (lower.startsWith("#")) {
+        const hex = lower.slice(1);
+        const full = hex.length === 3
+          ? hex.split("").map((c) => c + c).join("")
+          : hex;
+        const r = parseInt(full.slice(0, 2), 16);
+        const g = parseInt(full.slice(2, 4), 16);
+        const b = parseInt(full.slice(4, 6), 16);
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+      return lower.replace(/\s+/g, "");
+    },
+    onEditorInput() {
+      this.syncEditorHtml("post");
+    },
+    onLikesInput() {
+      this.syncEditorHtml("likes");
     },
     scrollToTop() {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -154,11 +237,11 @@ createApp({
       };
     },
     excerpt(text = "") {
-      const clean = text.replace(/\s+/g, " ").trim();
+      const clean = this.plainTextLines(text).trim();
       return clean.length > 120 ? `${clean.slice(0, 117)}...` : clean;
     },
     likesExcerpt(text = "") {
-      const clean = text.replace(/\s+/g, " ").trim();
+      const clean = this.plainTextInline(text);
       if (!clean) return "";
       const words = clean.split(" ");
       return words.length > 4 ? `${words.slice(0, 4).join(" ")}...` : clean;
@@ -237,7 +320,6 @@ createApp({
       await this.loadLikes(owner);
     },
     openLike(item) {
-      if (!this.isMobile) return;
       this.currentLike = item;
       this.view = "likes-detail";
     },
@@ -247,7 +329,7 @@ createApp({
       this.editor = { code: this.getSavedCode(), title: "", body: "" };
       this.pendingMedia = [];
       this.view = "editor";
-      this.$nextTick(() => this.resizeEditorBody());
+      this.$nextTick(() => this.setEditorContent("post", this.editor.body));
     },
     goSeed() {
       this.isEdit = false;
@@ -260,7 +342,7 @@ createApp({
       };
       this.pendingMedia = [];
       this.view = "editor";
-      this.$nextTick(() => this.resizeEditorBody());
+      this.$nextTick(() => this.setEditorContent("post", this.editor.body));
     },
     openEdit() {
       if (!this.currentPost) return;
@@ -274,7 +356,7 @@ createApp({
         ? [...this.currentPost.media]
         : [];
       this.view = "editor";
-      this.$nextTick(() => this.resizeEditorBody());
+      this.$nextTick(() => this.setEditorContent("post", this.editor.body));
     },
     handleFiles(event) {
       const files = Array.from(event.target.files || []);
@@ -362,6 +444,9 @@ createApp({
       if (this.likesEditorOpen && !this.likesEditor.code) {
         this.likesEditor.code = this.getSavedCode();
       }
+      if (this.likesEditorOpen) {
+        this.$nextTick(() => this.setEditorContent("likes", this.likesEditor.description));
+      }
     },
     openLikeEdit() {
       if (!this.currentLike) return;
@@ -378,6 +463,7 @@ createApp({
         imageUrl: this.currentLike.image_url || "",
         isObjectUrl: false,
       };
+      this.$nextTick(() => this.setEditorContent("likes", this.likesEditor.description));
     },
     async saveLike() {
       const trimmedCode = this.likesEditor.code.trim();
@@ -389,7 +475,8 @@ createApp({
 
       const title = this.likesEditor.title.trim();
       const description = this.likesEditor.description.trim();
-      if (!title || !description) return;
+      const descriptionText = this.plainTextInline(description);
+      if (!title || !descriptionText) return;
 
       let imageUrl = this.likesEditor.imageUrl || "";
 
@@ -466,7 +553,8 @@ createApp({
 
       const title = this.editor.title.trim();
       const body = this.editor.body.trim();
-      if (!title || !body) return;
+      const bodyText = this.plainTextInline(body);
+      if (!title || !bodyText) return;
 
       let postId = this.currentPost?.id;
 

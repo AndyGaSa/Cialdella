@@ -74,6 +74,12 @@
             <div class="date">{{ friendlyDate(post.created_at) }}</div>
             <h3>{{ post.title }}</h3>
             <p class="excerpt">{{ excerpt(post.body) }}</p>
+            <span
+              v-if="sealLetter(post.body)"
+              class="seal"
+              :class="sealLetter(post.body) === 'F' ? 'seal--fiona seal--pink' : 'seal--andy seal--turquoise'"
+              aria-hidden="true"
+            >{{ sealLetter(post.body) }}</span>
           </article>
 
           <div v-if="!isLoading && !posts.length" class="post-card">
@@ -136,7 +142,7 @@
               <img v-if="item.image_url" :src="item.image_url" :alt="item.title" />
               <div>
                 <h3>{{ item.title }}</h3>
-                <p>{{ isMobile ? likesExcerpt(item.description) : item.description }}</p>
+                <p>{{ likesExcerpt(item.description) }}</p>
               </div>
             </article>
           </div>
@@ -150,7 +156,24 @@
             </div>
             <input v-model="likesEditor.code" type="text" placeholder="codigo secreto" required />
             <input v-model="likesEditor.title" type="text" placeholder="titulo del gusto" required />
-            <textarea v-model="likesEditor.description" placeholder="descripcion cortita" required></textarea>
+            <div class="rich-toolbar">
+              <button class="ghost mini" type="button" @click="applyFormat('bold', null, 'likes')"><strong>B</strong></button>
+              <button class="ghost mini" type="button" @click="applyFormat('underline', null, 'likes')"><u>U</u></button>
+              <div class="highlight-group" aria-label="subrayar">
+                <span class="highlight-label">subrayar</span>
+                <button class="ghost mini highlight-swatch yellow" type="button" @click="applyFormat('hiliteColor', '#ffe58a', 'likes')" aria-label="amarillo"></button>
+                <button class="ghost mini highlight-swatch pink" type="button" @click="applyFormat('hiliteColor', '#ffc3da', 'likes')" aria-label="rosa"></button>
+                <button class="ghost mini highlight-swatch turquoise" type="button" @click="applyFormat('hiliteColor', '#9be8e6', 'likes')" aria-label="turquesa"></button>
+                <button class="ghost mini highlight-swatch clear" type="button" @click="applyFormat('hiliteColor', 'transparent', 'likes')" aria-label="quitar subrayado"></button>
+              </div>
+            </div>
+            <div
+              class="rich-editor"
+              contenteditable="true"
+              ref="likesBody"
+              data-placeholder="descripcion cortita"
+              @input="onLikesInput"
+            ></div>
             <div class="likes-upload">
               <input type="file" accept="image/*" @change="handleLikeImage" />
               <div v-if="likesEditor.imagePreview" class="likes-preview">
@@ -173,9 +196,9 @@
             </div>
           </div>
           <h3>{{ currentLike?.title }}</h3>
-          <p>{{ currentLike?.description }}</p>
+          <div v-html="renderContent(currentLike?.description)"></div>
           <div class="media-grid" v-if="currentLike?.image_url">
-            <div class="media-item">
+            <div class="media-item media-item--image">
               <img class="media-photo" :src="currentLike.image_url" :alt="currentLike.title" @click="openImage(currentLike.image_url)" />
             </div>
           </div>
@@ -193,9 +216,9 @@
             </div>
           </div>
           <h3>{{ currentPost?.title }}</h3>
-          <p v-html="detailBody"></p>
+          <div v-html="renderContent(currentPost?.body)"></div>
           <div class="media-grid">
-            <div v-for="(item, idx) in currentPost?.media || []" :key="idx" class="media-item">
+            <div v-for="(item, idx) in currentPost?.media || []" :key="idx" class="media-item" :class="{ 'media-item--image': item.type === 'image' }">
               <img
                 v-if="item.type === 'image'"
                 class="media-photo"
@@ -222,7 +245,24 @@
             <div class="hint">Que titulo le ponemos?</div>
             <input v-model="editor.title" type="text" placeholder="titulo cute" required />
             <div class="hint">Donde hablas:</div>
-            <textarea ref="editorBody" v-model="editor.body" placeholder="escribe aqui" required @input="autoResize($event)"></textarea>
+            <div class="rich-toolbar">
+              <button class="ghost mini" type="button" @click="applyFormat('bold', null, 'post')"><strong>B</strong></button>
+              <button class="ghost mini" type="button" @click="applyFormat('underline', null, 'post')"><u>U</u></button>
+              <div class="highlight-group" aria-label="subrayar">
+                <span class="highlight-label">subrayar</span>
+                <button class="ghost mini highlight-swatch yellow" type="button" @click="applyFormat('hiliteColor', '#ffe58a', 'post')" aria-label="amarillo"></button>
+                <button class="ghost mini highlight-swatch pink" type="button" @click="applyFormat('hiliteColor', '#ffc3da', 'post')" aria-label="rosa"></button>
+                <button class="ghost mini highlight-swatch turquoise" type="button" @click="applyFormat('hiliteColor', '#9be8e6', 'post')" aria-label="turquesa"></button>
+                <button class="ghost mini highlight-swatch clear" type="button" @click="applyFormat('hiliteColor', 'transparent', 'post')" aria-label="quitar subrayado"></button>
+              </div>
+            </div>
+            <div
+              class="rich-editor"
+              contenteditable="true"
+              ref="editorBody"
+              data-placeholder="escribe aqui"
+              @input="onEditorInput"
+            ></div>
             <div class="media-upload">
               <label class="hint">Adjuntar imagenes o audios 🎨</label>
               <input type="file" multiple accept="image/*,audio/*" @change="handleFiles" />
