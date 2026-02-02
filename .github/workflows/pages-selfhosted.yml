@@ -17,6 +17,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: [self-hosted, windows]
+    env:
+      PATH: C:\Program Files\Git\bin;C:\Program Files\Git\usr\bin;${{ env.PATH }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
