@@ -4,9 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CIALDELLA — diario de Fiona</title>
+    <style>
+      [v-cloak] { display: none; }
+      #app { visibility: hidden; }
+      #app.vue-ready { visibility: visible; }
+    </style>
     <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+    <link rel="dns-prefetch" href="https://unpkg.com" />
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
@@ -14,7 +23,7 @@
       <aside class="sidebar">
         <div class="brand">
           <div class="brand-mark">
-            <img v-if="view === 'list'" class="brand-photo" src="assets/foto.jpg" alt="foto de fiona" />
+            <img v-if="view === 'list'" class="brand-photo" src="assets/foto.jpg" alt="foto de fiona" decoding="async" />
           </div>
           <div class="brand-text">
             <h1>CIALDELLA</h1>
@@ -31,7 +40,7 @@
           <div class="likes-header">
             <h2><span>cosas q le 💖</span><span>a Fiona</span></h2>
             <button class="ghost mini icon-only" type="button" @click.stop="goLikesList('fiona')" aria-label="bichear">
-              <img src="assets/ojo.png" alt="" />
+              <img src="assets/ojo.png" alt="" decoding="async" />
             </button>
           </div>
         </div>
@@ -39,7 +48,7 @@
           <div class="likes-header">
             <h2><span>cosas q le 💖</span><span>a Andy</span></h2>
             <button class="ghost mini icon-only" type="button" @click.stop="goLikesList('andy')" aria-label="bichear">
-              <img src="assets/spidy.png" alt="" />
+              <img src="assets/spidy.png" alt="" decoding="async" />
             </button>
           </div>
         </div>
@@ -96,7 +105,7 @@
             <div class="likes-mobile-header">
               <h3><span>cosas q le 💖</span><span>a Fiona</span></h3>
               <button class="ghost icon-only" type="button" @click.stop="goLikesList('fiona')" aria-label="bichear">
-                <img src="assets/ojo.png" alt="" />
+                <img src="assets/ojo.png" alt="" decoding="async" />
               </button>
             </div>
           </div>
@@ -104,7 +113,7 @@
             <div class="likes-mobile-header">
               <h3><span>cosas q le 💖</span><span>a Andy</span></h3>
               <button class="ghost icon-only" type="button" @click.stop="goLikesList('andy')" aria-label="bichear">
-                <img src="assets/spidy.png" alt="" />
+                <img src="assets/spidy.png" alt="" decoding="async" />
               </button>
             </div>
           </div>
@@ -139,7 +148,7 @@
               <p class="muted">todavía no hay gustos. agrega el primero 🤍</p>
             </div>
             <article v-for="item in likes" :key="item.id" class="likes-item" @click="openLike(item)">
-              <img v-if="item.image_url" :src="item.image_url" :alt="item.title" />
+              <img v-if="item.image_url" :src="item.image_url" :alt="item.title" decoding="async" />
               <div>
                 <h3>{{ item.title }}</h3>
                 <p>{{ likesExcerpt(item.description) }}</p>
@@ -199,7 +208,7 @@
           <div v-html="renderContent(currentLike?.description)"></div>
           <div class="media-grid" v-if="currentLike?.image_url">
             <div class="media-item media-item--image">
-              <img class="media-photo" :src="currentLike.image_url" :alt="currentLike.title" @click="openImage(currentLike.image_url)" />
+              <img class="media-photo" :src="currentLike.image_url" :alt="currentLike.title" decoding="async" @click="openImage(currentLike.image_url)" />
             </div>
           </div>
         </section>
@@ -224,6 +233,7 @@
                 class="media-photo"
                 :src="item.url"
                 :alt="item.caption || 'foto'"
+                decoding="async"
                 @click="openImage(item.url)"
               />
               <audio v-else-if="item.type === 'audio'" controls :src="item.url"></audio>
@@ -285,7 +295,7 @@
         :style="{ display: lightbox.open && !isLoading ? 'grid' : 'none' }"
       >
         <div class="lightbox-inner" @click.stop>
-          <img :src="lightbox.url" alt="foto" />
+          <img :src="lightbox.url" alt="foto" decoding="async" />
           <div class="lightbox-actions">
             <button class="primary" type="button" @click="downloadImage">guardar</button>
             <button class="ghost" type="button" @click="closeLightbox">cerrar</button>
@@ -294,8 +304,8 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <script src="app.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script defer src="app.js"></script>
   </body>
 </html>

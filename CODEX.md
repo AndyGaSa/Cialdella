@@ -68,3 +68,5 @@ Storage:
 - The seal ignores trailing punctuation when checking the last letter.
 - Seal images live in `assets/andyseal.png` and `assets/fionaseal.png` with a centered A/F letter overlay.
 - Image media items render without the padded background container for cleaner mixed orientations.
+- Perf: JS is loaded with `defer` and CDN domains are dns-prefetched.
+- Perf: Posts/likes are cached in `localStorage` with a short TTL and cleared after saves.

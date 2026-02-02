@@ -68,6 +68,10 @@ createApp({
     },
   },
   mounted() {
+    const appRoot = document.getElementById("app");
+    if (appRoot) {
+      appRoot.classList.add("vue-ready");
+    }
     if (!hasSupabase) {
       this.errorMsg = "Supabase no está cargado. Abre la página con internet o en GitHub Pages.";
       return;
@@ -81,6 +85,7 @@ createApp({
     window.addEventListener("keydown", this.handleKeydown);
     this.setLikesTheme();
     this.setLikesEmojis();
+    this.loadCachedData();
     this.loadPosts();
     this.loadLikes();
   },
@@ -91,6 +96,63 @@ createApp({
     window.removeEventListener("keydown", this.handleKeydown);
   },
   methods: {
+    storageAvailable() {
+      try {
+        const testKey = "__cialdella_test__";
+        localStorage.setItem(testKey, "1");
+        localStorage.removeItem(testKey);
+        return true;
+      } catch (err) {
+        return false;
+      }
+    },
+    readCache(key) {
+      if (!this.storageAvailable()) return null;
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || !parsed.ts) return null;
+        const age = Date.now() - parsed.ts;
+        const ttl = 5 * 60 * 1000;
+        if (age > ttl) return null;
+        return parsed.data;
+      } catch (err) {
+        return null;
+      }
+    },
+    writeCache(key, data) {
+      if (!this.storageAvailable()) return;
+      try {
+        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+      } catch (err) {
+        // ignore storage failures
+      }
+    },
+    clearCache(key) {
+      if (!this.storageAvailable()) return;
+      try {
+        localStorage.removeItem(key);
+      } catch (err) {
+        // ignore storage failures
+      }
+    },
+    loadCachedData() {
+      const cachedPosts = this.readCache("cialdella_posts");
+      if (cachedPosts?.length) {
+        this.posts = cachedPosts;
+      }
+      const cachedLikes = this.readCache("cialdella_likes");
+      if (cachedLikes) {
+        if (cachedLikes.fiona?.length) {
+          this.likes = cachedLikes.fiona;
+          this.likesOwner = "fiona";
+        } else if (cachedLikes.andy?.length) {
+          this.likes = cachedLikes.andy;
+          this.likesOwner = "andy";
+        }
+      }
+    },
     hasHtml(value = "") {
       return /<\/?[a-z][\s\S]*>/i.test(value);
     },
@@ -268,6 +330,7 @@ createApp({
       }
 
       this.posts = data || [];
+      this.writeCache("cialdella_posts", this.posts);
       this.view = "list";
       this.isLoading = false;
     },
@@ -288,6 +351,9 @@ createApp({
       }
 
       this.likes = data || [];
+      const cachedLikes = this.readCache("cialdella_likes") || {};
+      cachedLikes[owner] = this.likes;
+      this.writeCache("cialdella_likes", cachedLikes);
       this.isLikesLoading = false;
     },
     async openPost(id) {
@@ -541,6 +607,7 @@ createApp({
         isObjectUrl: false,
       };
       this.likesEditorOpen = false;
+      this.clearCache("cialdella_likes");
       await this.loadLikes();
     },
     async savePost() {
@@ -625,6 +692,7 @@ createApp({
 
       await this.loadPosts();
       await this.openPost(postId);
+      this.clearCache("cialdella_posts");
     },
   },
 }).mount("#app");
