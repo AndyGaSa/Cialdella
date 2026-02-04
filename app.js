@@ -309,7 +309,7 @@ createApp({
       return words.length > 4 ? `${words.slice(0, 4).join(" ")}...` : clean;
     },
     isFileName(value = "") {
-      return /\.(png|jpe?g|gif|webp|mp3|wav|m4a)$/i.test(value.trim());
+      return /\.(png|jpe?g|gif|webp|mp3|wav|m4a|mp4|mov|m4v)$/i.test(value.trim());
     },
     shouldShowCaption(item) {
       if (!item?.caption) return false;
@@ -431,6 +431,8 @@ createApp({
           this.pendingMedia.push({ type: "image", file, name: file.name });
         } else if (file.type.startsWith("audio/")) {
           this.pendingMedia.push({ type: "audio", file, name: file.name });
+        } else if (file.type.startsWith("video/")) {
+          this.pendingMedia.push({ type: "video", file, name: file.name });
         }
       });
       event.target.value = "";

@@ -857,6 +857,11 @@ button:hover {
 .media-item audio {
   width: 100%;
 }
+.media-item video {
+  width: 100%;
+  border-radius: 12px;
+  display: block;
+}
 
 .editor form {
   display: grid;

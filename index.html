@@ -237,6 +237,7 @@
                 @click="openImage(item.url)"
               />
               <audio v-else-if="item.type === 'audio'" controls :src="item.url"></audio>
+              <video v-else-if="item.type === 'video'" controls playsinline :src="item.url"></video>
               <div v-if="shouldShowCaption(item)" class="muted">{{ item.caption }}</div>
             </div>
           </div>
@@ -274,12 +275,12 @@
               @input="onEditorInput"
             ></div>
             <div class="media-upload">
-              <label class="hint">Adjuntar imagenes o audios 🎨</label>
-              <input type="file" multiple accept="image/*,audio/*" @change="handleFiles" />
+              <label class="hint">Adjuntar imagenes, audios o videos 🎨</label>
+              <input type="file" multiple accept="image/*,audio/*,video/*" @change="handleFiles" />
             </div>
             <div class="media-list" v-if="pendingMedia.length">
               <div v-for="(item, idx) in pendingMedia" :key="idx" class="media-chip">
-                <span>{{ item.type === 'image' ? '🖼️' : '🔊' }} {{ item.caption || item.name || 'archivo' }}</span>
+                <span>{{ item.type === 'image' ? '🖼️' : item.type === 'video' ? '🎥' : '🔊' }} {{ item.caption || item.name || 'archivo' }}</span>
                 <button class="ghost" type="button" @click="removeMedia(idx)">x</button>
               </div>
             </div>
