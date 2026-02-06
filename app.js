@@ -1,6 +1,9 @@
 const SUPABASE_URL = "https://ejfapcgmmbgdxakzqkfe.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_RCdVm_zuyZQHyeKwLSvwsQ_DWnGCMY2";
-const GATE_EMAIL = "andybdn@hotmail.es";
+const GATE_EMAILS = {
+  fiona: "andybdn@hotmail.es",
+  andy: "iam@andygarcia.dev",
+};
 
 const hasSupabase = Boolean(window.supabase && window.supabase.createClient);
 const supabaseClient = hasSupabase
@@ -15,6 +18,7 @@ createApp({
       gateUnlocked: false,
       gateInput: "",
       gateError: "",
+      gateUser: "fiona",
       gateFloatItems: [],
       hasInitialized: false,
       isMobile: window.matchMedia("(max-width: 960px)").matches,
@@ -32,9 +36,11 @@ createApp({
       },
       view: "list",
       currentPost: null,
+      currentUserId: "",
       editor: {
         title: "",
         body: "",
+        status: "draft",
       },
       likesEditor: {
         id: "",
@@ -48,9 +54,11 @@ createApp({
       likesEditorOpen: false,
       pendingMedia: [],
       isEdit: false,
+      isSavingLike: false,
       isLikesLoading: false,
       likesError: "",
       errorMsg: "",
+      isSavingPost: false,
       lightbox: {
         open: false,
         url: "",
@@ -79,6 +87,7 @@ createApp({
       supabaseClient.auth.getSession().then(({ data }) => {
         if (data?.session) {
           this.gateUnlocked = true;
+          this.currentUserId = data.session.user?.id || "";
         }
       });
     }
@@ -304,14 +313,16 @@ createApp({
         return;
       }
       this.gateError = "";
+      const email = GATE_EMAILS[this.gateUser] || GATE_EMAILS.fiona;
       supabaseClient.auth
-        .signInWithPassword({ email: GATE_EMAIL, password: trimmed })
+        .signInWithPassword({ email, password: trimmed })
         .then(({ data, error }) => {
           if (error || !data?.session) {
             this.gateError = "contraseña incorrecta";
             return;
           }
           this.gateUnlocked = true;
+          this.currentUserId = data.session.user?.id || "";
           this.gateInput = "";
         });
     },
@@ -372,7 +383,7 @@ createApp({
       this.isLoading = true;
       const { data, error } = await supabaseClient
         .from("posts")
-        .select("id,title,body,media,created_at,updated_at")
+        .select("id,title,body,media,created_at,updated_at,status,owner")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -411,7 +422,7 @@ createApp({
     async openPost(id) {
       const { data, error } = await supabaseClient
         .from("posts")
-        .select("id,title,body,media,created_at,updated_at")
+        .select("id,title,body,media,created_at,updated_at,status,owner")
         .eq("id", id)
         .single();
 
@@ -444,7 +455,7 @@ createApp({
     goNew() {
       this.isEdit = false;
       this.currentPost = null;
-      this.editor = { title: "", body: "" };
+      this.editor = { title: "", body: "", status: "draft" };
       this.pendingMedia = [];
       this.view = "editor";
       this.$nextTick(() => this.setEditorContent("post", this.editor.body));
@@ -456,6 +467,7 @@ createApp({
         title: "✨ hola fiona soy tu blog",
         body:
           "tucu tuc tucu tucu habla de ti de helado de chicles de sara de que te hace feliz.",
+        status: "draft",
       };
       this.pendingMedia = [];
       this.view = "editor";
@@ -467,6 +479,7 @@ createApp({
       this.editor = {
         title: this.currentPost.title,
         body: this.currentPost.body,
+        status: this.currentPost.status || "published",
       };
       this.pendingMedia = Array.isArray(this.currentPost.media)
         ? [...this.currentPost.media]
@@ -579,153 +592,216 @@ createApp({
       };
       this.$nextTick(() => this.setEditorContent("likes", this.likesEditor.description));
     },
-    async saveLike() {
-      const title = this.likesEditor.title.trim();
-      const description = this.likesEditor.description.trim();
-      const descriptionText = this.plainTextInline(description);
-      if (!title || !descriptionText) return;
-
-      let imageUrl = this.likesEditor.imageUrl || "";
-
-      if (this.likesEditor.imageFile) {
-        const ext = this.likesEditor.imageFile.name.split(".").pop();
-        const path = `likes/${crypto.randomUUID()}.${ext}`;
-        const { data, error } = await supabaseClient.storage
-          .from("media")
-          .upload(path, this.likesEditor.imageFile, { upsert: true });
-
-        if (error) {
-          alert(error.message);
-          return;
-        }
-
-        const { data: urlData } = supabaseClient.storage
-          .from("media")
-          .getPublicUrl(data.path);
-
-        imageUrl = urlData.publicUrl;
-      }
-
-      if (this.likesEditor.id) {
-        const { error } = await supabaseClient
-          .from("likes")
-          .update({
-            title,
-            description,
-            image_url: imageUrl || null,
-            person: this.likesOwner,
-          })
-          .eq("id", this.likesEditor.id);
-
-        if (error) {
-          alert(error.message);
-          return;
-        }
-      } else {
-        const { error } = await supabaseClient
-          .from("likes")
-          .insert({
-            title,
-            description,
-            image_url: imageUrl || null,
-            person: this.likesOwner,
-          });
-
-        if (error) {
-          alert(error.message);
-          return;
-        }
-      }
-
-      this.likesEditor = {
-        id: "",
-        title: "",
-        description: "",
-        imageFile: null,
-        imagePreview: "",
-        imageUrl: "",
-        isObjectUrl: false,
-      };
-      this.likesEditorOpen = false;
-      this.clearCache("cialdella_likes");
-      await this.loadLikes();
-    },
-    async savePost() {
-      const title = this.editor.title.trim();
-      const body = this.editor.body.trim();
-      const bodyText = this.plainTextInline(body);
-      if (!title || !bodyText) return;
-
-      let postId = this.currentPost?.id;
-
-      if (!postId) {
-        const { data, error } = await supabaseClient
-          .from("posts")
-          .insert({ title, body })
-          .select("id")
-          .single();
-
-        if (error) {
-          alert(error.message);
-          return;
-        }
-
-        postId = data.id;
-      } else {
-        const { error } = await supabaseClient
-          .from("posts")
-          .update({ title, body, updated_at: new Date().toISOString() })
-          .eq("id", postId);
-
-        if (error) {
-          alert(error.message);
-          return;
-        }
-      }
-
-      const uploadedMedia = [];
-
-      for (const item of this.pendingMedia) {
-        if (!item.file) {
-          uploadedMedia.push(item);
-          continue;
-        }
-
-        const ext = item.file.name.split(".").pop();
-        const path = `${postId}/${crypto.randomUUID()}.${ext}`;
-        const { data, error } = await supabaseClient.storage
-          .from("media")
-          .upload(path, item.file, { upsert: true });
-
-        if (error) {
-          alert(error.message);
-          return;
-        }
-
-        const { data: urlData } = supabaseClient.storage
-          .from("media")
-          .getPublicUrl(data.path);
-
-        uploadedMedia.push({
-          type: item.type,
-          url: urlData.publicUrl,
-          caption: item.caption || "",
-        });
-      }
-
-      const { error: mediaError } = await supabaseClient
-        .from("posts")
-        .update({ media: uploadedMedia, updated_at: new Date().toISOString() })
-        .eq("id", postId);
-
-      if (mediaError) {
-        alert(mediaError.message);
+    async deleteLike() {
+      if (!this.currentLike) return;
+      const ok = confirm("¿Seguro que quieres borrar este gusto?");
+      if (!ok) return;
+      const { error } = await supabaseClient
+        .from("likes")
+        .delete()
+        .eq("id", this.currentLike.id);
+      if (error) {
+        alert(error.message);
         return;
       }
+      this.currentLike = null;
+      await this.loadLikes(this.likesOwner);
+      this.view = "likes";
+    },
+    async saveLike() {
+      if (this.isSavingLike) return;
+      this.isSavingLike = true;
+      try {
+        const title = this.likesEditor.title.trim();
+        const description = this.likesEditor.description.trim();
+        const descriptionText = this.plainTextInline(description);
+        if (!title || !descriptionText) return;
 
-      await this.loadPosts();
-      await this.openPost(postId);
+        let imageUrl = this.likesEditor.imageUrl || "";
+
+        if (this.likesEditor.imageFile) {
+          const ext = this.likesEditor.imageFile.name.split(".").pop();
+          const path = `likes/${crypto.randomUUID()}.${ext}`;
+          const { data, error } = await supabaseClient.storage
+            .from("media")
+            .upload(path, this.likesEditor.imageFile, { upsert: true });
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+
+          const { data: urlData } = supabaseClient.storage
+            .from("media")
+            .getPublicUrl(data.path);
+
+          imageUrl = urlData.publicUrl;
+        }
+
+        if (this.likesEditor.id) {
+          const { error } = await supabaseClient
+            .from("likes")
+            .update({
+              title,
+              description,
+              image_url: imageUrl || null,
+              person: this.likesOwner,
+            })
+            .eq("id", this.likesEditor.id);
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+        } else {
+          const { error } = await supabaseClient
+            .from("likes")
+            .insert({
+              title,
+              description,
+              image_url: imageUrl || null,
+              person: this.likesOwner,
+            });
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+        }
+
+        this.likesEditor = {
+          id: "",
+          title: "",
+          description: "",
+          imageFile: null,
+          imagePreview: "",
+          imageUrl: "",
+          isObjectUrl: false,
+        };
+        this.likesEditorOpen = false;
+        this.clearCache("cialdella_likes");
+        await this.loadLikes();
+      } finally {
+        this.isSavingLike = false;
+      }
+    },
+    async savePost() {
+      if (this.isSavingPost) return;
+      this.isSavingPost = true;
+      try {
+        const title = this.editor.title.trim();
+        const body = this.editor.body.trim();
+        const bodyText = this.plainTextInline(body);
+        if (!title || !bodyText) return;
+
+        let postId = this.currentPost?.id;
+
+        if (!postId) {
+          const { data, error } = await supabaseClient
+            .from("posts")
+          .insert({
+            title,
+            body,
+            status: this.editor.status || "published",
+            owner: this.currentUserId || null,
+          })
+            .select("id")
+            .single();
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+
+          postId = data.id;
+        } else {
+          const { error } = await supabaseClient
+            .from("posts")
+          .update({
+            title,
+            body,
+            status: this.editor.status || "published",
+            updated_at: new Date().toISOString(),
+          })
+            .eq("id", postId);
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+        }
+
+        const uploadedMedia = [];
+
+        for (const item of this.pendingMedia) {
+          if (!item.file) {
+            uploadedMedia.push(item);
+            continue;
+          }
+
+          const ext = item.file.name.split(".").pop();
+          const path = `${postId}/${crypto.randomUUID()}.${ext}`;
+          const { data, error } = await supabaseClient.storage
+            .from("media")
+            .upload(path, item.file, { upsert: true });
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+
+          const { data: urlData } = supabaseClient.storage
+            .from("media")
+            .getPublicUrl(data.path);
+
+          uploadedMedia.push({
+            type: item.type,
+            url: urlData.publicUrl,
+            caption: item.caption || "",
+          });
+        }
+
+        const { error: mediaError } = await supabaseClient
+          .from("posts")
+          .update({ media: uploadedMedia, updated_at: new Date().toISOString() })
+          .eq("id", postId);
+
+        if (mediaError) {
+          alert(mediaError.message);
+          return;
+        }
+
+        await this.loadPosts();
+        await this.openPost(postId);
+        this.clearCache("cialdella_posts");
+      } finally {
+        this.isSavingPost = false;
+      }
+    },
+    async saveDraft() {
+      this.editor.status = "draft";
+      await this.savePost();
+    },
+    async publishPost() {
+      this.editor.status = "published";
+      await this.savePost();
+    },
+    async deletePost() {
+      if (!this.currentPost) return;
+      const ok = confirm("¿Seguro que quieres borrar este post?");
+      if (!ok) return;
+      const { error } = await supabaseClient
+        .from("posts")
+        .delete()
+        .eq("id", this.currentPost.id);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      this.currentPost = null;
       this.clearCache("cialdella_posts");
+      await this.loadPosts();
+      this.view = "list";
     },
   },
 }).mount("#app");

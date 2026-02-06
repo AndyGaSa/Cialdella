@@ -28,12 +28,15 @@
         </div>
         <div class="gate-card">
           <div class="gate-tag gate-tag--warning">⚠️ aviso: desagradablamente intensos</div>
-          <h1 class="gate-title">HOLA Fiona!</h1>
-          <p class="gate-sub">ERES FIONA VERDAD? QUIEN ERES? CONTRASEÑA?!!</p>
+          <h1 class="gate-title">HOLA {{ gateUser === 'andy' ? 'Andy' : 'Fiona' }}!</h1>
+          <p class="gate-sub">ERES {{ gateUser === 'andy' ? 'ANDY' : 'FIONA' }} VERDAD? QUIEN ERES? CONTRASEÑA?!!</p>
           <form class="gate-form" @submit.prevent="submitGate">
             <input v-model="gateInput" type="password" placeholder="ejem si, codigo?" required @input="gateError = ''" />
             <button class="primary" type="submit">entrar</button>
           </form>
+          <button class="gate-switch" type="button" @click="gateUser = gateUser === 'andy' ? 'fiona' : 'andy'">
+            {{ gateUser === 'andy' ? 'Eres Fiona?' : 'Eres Andy?' }}
+          </button>
           <p class="gate-error" v-if="gateError">{{ gateError }}</p>
         </div>
         <div class="gate-flowers" aria-hidden="true">
@@ -123,7 +126,8 @@
             <div class="skeleton-line"></div>
           </article>
 
-          <article v-for="post in posts" :key="post.id" class="post-card" @click="openPost(post.id)">
+          <article v-for="post in posts" :key="post.id" class="post-card" :class="{ 'post-card--draft': post.status === 'draft' }" @click="openPost(post.id)">
+            <span v-if="post.status === 'draft'" class="draft-badge top-left">📝 borrador</span>
             <div class="date">{{ friendlyDate(post.created_at) }}</div>
             <h3>{{ post.title }}</h3>
             <p class="excerpt">{{ excerpt(post.body) }}</p>
@@ -233,7 +237,9 @@
                 <button class="ghost mini" type="button" @click="clearLikeImage">quitar</button>
               </div>
             </div>
-            <button class="primary" type="submit">guardar gusto</button>
+            <button class="primary" type="submit" :disabled="isSavingLike">
+              {{ isSavingLike ? 'guardando...' : 'guardar gusto' }}
+            </button>
           </form>
         </section>
 
@@ -245,6 +251,7 @@
             <div class="detail-actions">
               <button class="ghost" @click="goLikesList">← volver</button>
               <button class="icon-btn" @click="openLikeEdit">✏️ editar</button>
+              <button class="icon-btn danger" @click="deleteLike">🗑️ borrar</button>
             </div>
           </div>
           <h3>{{ currentLike?.title }}</h3>
@@ -256,15 +263,17 @@
           </div>
         </section>
 
-        <section v-if="view === 'detail'" class="post-detail">
+        <section v-if="view === 'detail'" class="post-detail" :class="{ 'post-detail--draft': currentPost?.status === 'draft' }">
           <div class="actions">
             <div>
+              <div v-if="currentPost?.status === 'draft'" class="draft-badge draft-badge--stack">📝 borrador</div>
               <div class="date">{{ friendlyDate(currentPost?.created_at) }}</div>
               <div class="muted edited-at" v-if="currentPost?.updated_at">editado {{ friendlyDate(currentPost.updated_at) }}</div>
             </div>
             <div class="detail-actions">
               <button class="ghost" @click="goList">← volver</button>
               <button class="icon-btn" @click="openEdit">✏️ editar</button>
+              <button class="icon-btn danger" @click="deletePost">🗑️ borrar</button>
             </div>
           </div>
           <h3>{{ currentPost?.title }}</h3>
@@ -325,7 +334,12 @@
                 <button class="ghost" type="button" @click="removeMedia(idx)">x</button>
               </div>
             </div>
-            <button class="primary" type="submit">{{ isEdit ? 'guardar cambios' : 'publicar' }}</button>
+            <div class="editor-actions">
+              <button class="ghost" type="button" :disabled="isSavingPost" @click="saveDraft">guardar borrador 📝</button>
+              <button class="primary" type="submit" :disabled="isSavingPost" @click="publishPost">
+                {{ isSavingPost ? 'guardando...' : 'publicar ✨' }}
+              </button>
+            </div>
           </form>
         </section>
       </main>

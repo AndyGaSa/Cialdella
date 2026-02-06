@@ -178,6 +178,24 @@ body {
   font-size: 16px;
 }
 
+.gate-switch {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-top: 10px;
+  color: #2b6cb0;
+  text-decoration: underline;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.gate-switch:hover {
+  transform: none;
+  box-shadow: none;
+  color: #1f5a93;
+}
+
 .gate-error {
   margin: 12px 0 0;
   color: #c74c4c;
@@ -876,6 +894,61 @@ button:hover {
   overflow: visible;
 }
 
+.post-card--draft {
+  background: #e6e6e6;
+  padding-top: 40px;
+}
+
+.post-card--draft::before {
+  content: "";
+  display: block;
+  background-image: var(--entry-bg);
+  background-color: #d9d9d9;
+  background-blend-mode: luminosity;
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(1) saturate(0) brightness(1.1) contrast(0.85);
+  opacity: 0.6;
+}
+
+.draft-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: #6b6b6b;
+  background: #ededed;
+  border-radius: 999px;
+  padding: 4px 10px;
+  width: fit-content;
+}
+
+.draft-badge.top-left {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.draft-badge--stack {
+  margin-bottom: 12px;
+}
+
+.post-detail--draft {
+  background: #e6e6e6;
+}
+
+.post-detail--draft::before {
+  content: "";
+  display: block;
+  background-image: var(--entry-bg);
+  background-color: #d9d9d9;
+  background-blend-mode: luminosity;
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(1) saturate(0) brightness(1.1) contrast(0.85);
+  opacity: 0.6;
+}
+
 .post-card::before {
   content: "";
   position: absolute;
@@ -1042,6 +1115,11 @@ button:hover {
   padding: 8px 12px;
 }
 
+.icon-btn.danger {
+  background: #ffe3e3;
+  color: #8f1d1d;
+}
+
 .media-grid {
   display: grid;
   gap: 12px;
@@ -1086,6 +1164,13 @@ button:hover {
 .editor form {
   display: grid;
   gap: 12px;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .editor .back-btn {
