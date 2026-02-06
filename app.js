@@ -1,6 +1,6 @@
 const SUPABASE_URL = "https://ejfapcgmmbgdxakzqkfe.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_RCdVm_zuyZQHyeKwLSvwsQ_DWnGCMY2";
-const EDIT_CODE = "tengo1bigote";
+const GATE_EMAIL = "andybdn@hotmail.es";
 
 const hasSupabase = Boolean(window.supabase && window.supabase.createClient);
 const supabaseClient = hasSupabase
@@ -11,8 +11,12 @@ const { createApp } = window.Vue;
 
 createApp({
   data() {
-    const savedCode = sessionStorage.getItem("cialdella_code") || "";
     return {
+      gateUnlocked: false,
+      gateInput: "",
+      gateError: "",
+      gateFloatItems: [],
+      hasInitialized: false,
       isMobile: window.matchMedia("(max-width: 960px)").matches,
       posts: [],
       likes: [],
@@ -29,12 +33,10 @@ createApp({
       view: "list",
       currentPost: null,
       editor: {
-        code: savedCode,
         title: "",
         body: "",
       },
       likesEditor: {
-        code: savedCode,
         id: "",
         title: "",
         description: "",
@@ -72,22 +74,21 @@ createApp({
     if (appRoot) {
       appRoot.classList.add("vue-ready");
     }
-    if (!hasSupabase) {
-      this.errorMsg = "Supabase no está cargado. Abre la página con internet o en GitHub Pages.";
-      return;
+    this.buildGateFloats();
+    if (hasSupabase && supabaseClient) {
+      supabaseClient.auth.getSession().then(({ data }) => {
+        if (data?.session) {
+          this.gateUnlocked = true;
+        }
+      });
     }
-    this.lightbox = { open: false, url: "" };
-    this.mediaQuery = window.matchMedia("(max-width: 960px)");
-    this.handleMediaChange = (event) => {
-      this.isMobile = event.matches;
-    };
-    this.mediaQuery.addEventListener("change", this.handleMediaChange);
-    window.addEventListener("keydown", this.handleKeydown);
-    this.setLikesTheme();
-    this.setLikesEmojis();
-    this.loadCachedData();
-    this.loadPosts();
-    this.loadLikes();
+  },
+  watch: {
+    gateUnlocked(next) {
+      if (next) {
+        this.initializeApp();
+      }
+    },
   },
   beforeUnmount() {
     if (this.mediaQuery && this.handleMediaChange) {
@@ -96,6 +97,47 @@ createApp({
     window.removeEventListener("keydown", this.handleKeydown);
   },
   methods: {
+    buildGateFloats() {
+      const assets = [
+        "assets/limon.png",
+        "assets/argentina.png",
+        "assets/alaca.png",
+        "assets/agz.jpg",
+      ];
+      const shuffle = (list) => [...list].sort(() => Math.random() - 0.5);
+      const rand = (min, max) => Math.random() * (max - min) + min;
+      const baseLeft = [8, 42, 76, 90];
+      const items = shuffle(assets).map((url, idx) => {
+        const jitter = rand(-3, 3);
+        return {
+          url,
+          left: `${Math.max(6, Math.min(92, baseLeft[idx] + jitter))}%`,
+          duration: `${rand(16, 22).toFixed(1)}s`,
+          delay: `${rand(0, 2.8).toFixed(1)}s`,
+        };
+      });
+      this.gateFloatItems = items;
+    },
+    initializeApp() {
+      if (this.hasInitialized) return;
+      this.hasInitialized = true;
+      if (!hasSupabase) {
+        this.errorMsg = "Supabase no está cargado. Abre la página con internet o en GitHub Pages.";
+        return;
+      }
+      this.lightbox = { open: false, url: "" };
+      this.mediaQuery = window.matchMedia("(max-width: 960px)");
+      this.handleMediaChange = (event) => {
+        this.isMobile = event.matches;
+      };
+      this.mediaQuery.addEventListener("change", this.handleMediaChange);
+      window.addEventListener("keydown", this.handleKeydown);
+      this.setLikesTheme();
+      this.setLikesEmojis();
+      this.loadCachedData();
+      this.loadPosts();
+      this.loadLikes();
+    },
     storageAvailable() {
       try {
         const testKey = "__cialdella_test__";
@@ -254,14 +296,24 @@ createApp({
     scrollToTop() {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     },
-    checkCode(code) {
-      return code === EDIT_CODE;
-    },
-    getSavedCode() {
-      return sessionStorage.getItem("cialdella_code") || "";
-    },
-    rememberCode(code) {
-      sessionStorage.setItem("cialdella_code", code);
+    submitGate() {
+      const trimmed = this.gateInput.trim();
+      if (!trimmed) return;
+      if (!hasSupabase || !supabaseClient) {
+        this.gateError = "No puedo validar sin internet.";
+        return;
+      }
+      this.gateError = "";
+      supabaseClient.auth
+        .signInWithPassword({ email: GATE_EMAIL, password: trimmed })
+        .then(({ data, error }) => {
+          if (error || !data?.session) {
+            this.gateError = "contraseña incorrecta";
+            return;
+          }
+          this.gateUnlocked = true;
+          this.gateInput = "";
+        });
     },
     friendlyDate(dateString) {
       if (!dateString) return "";
@@ -392,7 +444,7 @@ createApp({
     goNew() {
       this.isEdit = false;
       this.currentPost = null;
-      this.editor = { code: this.getSavedCode(), title: "", body: "" };
+      this.editor = { title: "", body: "" };
       this.pendingMedia = [];
       this.view = "editor";
       this.$nextTick(() => this.setEditorContent("post", this.editor.body));
@@ -401,7 +453,6 @@ createApp({
       this.isEdit = false;
       this.currentPost = null;
       this.editor = {
-        code: this.getSavedCode(),
         title: "✨ hola fiona soy tu blog",
         body:
           "tucu tuc tucu tucu habla de ti de helado de chicles de sara de que te hace feliz.",
@@ -414,7 +465,6 @@ createApp({
       if (!this.currentPost) return;
       this.isEdit = true;
       this.editor = {
-        code: this.getSavedCode(),
         title: this.currentPost.title,
         body: this.currentPost.body,
       };
@@ -509,9 +559,6 @@ createApp({
     },
     toggleLikesEditor() {
       this.likesEditorOpen = !this.likesEditorOpen;
-      if (this.likesEditorOpen && !this.likesEditor.code) {
-        this.likesEditor.code = this.getSavedCode();
-      }
       if (this.likesEditorOpen) {
         this.$nextTick(() => this.setEditorContent("likes", this.likesEditor.description));
       }
@@ -522,7 +569,6 @@ createApp({
       this.likesEditorOpen = true;
       this.view = "likes";
       this.likesEditor = {
-        code: this.getSavedCode(),
         id: this.currentLike.id,
         title: this.currentLike.title,
         description: this.currentLike.description,
@@ -534,13 +580,6 @@ createApp({
       this.$nextTick(() => this.setEditorContent("likes", this.likesEditor.description));
     },
     async saveLike() {
-      const trimmedCode = this.likesEditor.code.trim();
-      if (!this.checkCode(trimmedCode)) {
-        alert("codigo secreto incorrecto");
-        return;
-      }
-      this.rememberCode(trimmedCode);
-
       const title = this.likesEditor.title.trim();
       const description = this.likesEditor.description.trim();
       const descriptionText = this.plainTextInline(description);
@@ -599,7 +638,6 @@ createApp({
       }
 
       this.likesEditor = {
-        code: this.getSavedCode(),
         id: "",
         title: "",
         description: "",
@@ -613,13 +651,6 @@ createApp({
       await this.loadLikes();
     },
     async savePost() {
-      const trimmedCode = this.editor.code.trim();
-      if (!this.checkCode(trimmedCode)) {
-        alert("codigo secreto incorrecto");
-        return;
-      }
-      this.rememberCode(trimmedCode);
-
       const title = this.editor.title.trim();
       const body = this.editor.body.trim();
       const bodyText = this.plainTextInline(body);

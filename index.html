@@ -19,8 +19,52 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="app" class="page" v-cloak>
-      <aside class="sidebar">
+    <div id="app" class="app-root" v-cloak>
+      <div class="gate" v-if="!gateUnlocked">
+        <div class="gate-orbit">
+          <span class="gate-dot gate-dot--one"></span>
+          <span class="gate-dot gate-dot--two"></span>
+          <span class="gate-dot gate-dot--three"></span>
+        </div>
+        <div class="gate-card">
+          <div class="gate-tag gate-tag--warning">⚠️ aviso: desagradablamente intensos</div>
+          <h1 class="gate-title">HOLA Fiona!</h1>
+          <p class="gate-sub">ERES FIONA VERDAD? QUIEN ERES? CONTRASEÑA?!!</p>
+          <form class="gate-form" @submit.prevent="submitGate">
+            <input v-model="gateInput" type="password" placeholder="ejem si, codigo?" required @input="gateError = ''" />
+            <button class="primary" type="submit">entrar</button>
+          </form>
+          <p class="gate-error" v-if="gateError">{{ gateError }}</p>
+        </div>
+        <div class="gate-flowers" aria-hidden="true">
+          <span class="flower">🌸</span>
+          <span class="flower">🌼</span>
+          <span class="flower">💮</span>
+          <span class="flower">🌺</span>
+          <span class="flower">🌷</span>
+          <span class="flower">🌸</span>
+          <span class="flower">🌼</span>
+          <span class="flower">💮</span>
+          <span class="flower">🌺</span>
+          <span class="flower">🌷</span>
+        </div>
+        <div class="gate-floats" aria-hidden="true">
+          <span
+            v-for="(item, idx) in gateFloatItems"
+            :key="`float-${idx}`"
+            class="float-img"
+            :style="{
+              left: item.left,
+              backgroundImage: `url('${item.url}')`,
+              animationDuration: item.duration,
+              animationDelay: item.delay,
+            }"
+          ></span>
+        </div>
+      </div>
+
+      <div class="page" v-if="gateUnlocked">
+        <aside class="sidebar">
         <div class="brand">
           <div class="brand-mark">
             <img v-if="view === 'list'" class="brand-photo" src="assets/foto.jpg" alt="foto de fiona" decoding="async" />
@@ -163,7 +207,6 @@
                 <button class="ghost" type="button" :class="{ active: likesOwner === 'andy' }" @click="setLikesOwner('andy')">{{ likesOwnerLabels.andy }}</button>
               </div>
             </div>
-            <input v-model="likesEditor.code" type="text" placeholder="codigo secreto" required />
             <input v-model="likesEditor.title" type="text" placeholder="titulo del gusto" required />
             <div class="rich-toolbar">
               <button class="ghost mini" type="button" @click="applyFormat('bold', null, 'likes')"><strong>B</strong></button>
@@ -251,8 +294,6 @@
             <div class="editor-title">{{ isEdit ? 'hagamos cambiios jj' : 'Nuevo post!!!!' }}</div>
           </div>
           <form @submit.prevent="savePost">
-            <div class="hint">Contraseña:</div>
-            <input v-model="editor.code" type="text" placeholder="codigo secreto" required />
             <div class="hint">Que titulo le ponemos?</div>
             <input v-model="editor.title" type="text" placeholder="titulo cute" required />
             <div class="hint">Donde hablas:</div>
@@ -289,17 +330,18 @@
         </section>
       </main>
 
-      <div
-        class="lightbox"
-        @click="closeLightbox"
-        style="display: none"
-        :style="{ display: lightbox.open && !isLoading ? 'grid' : 'none' }"
-      >
-        <div class="lightbox-inner" @click.stop>
-          <img :src="lightbox.url" alt="foto" decoding="async" />
-          <div class="lightbox-actions">
-            <button class="primary" type="button" @click="downloadImage">guardar</button>
-            <button class="ghost" type="button" @click="closeLightbox">cerrar</button>
+        <div
+          class="lightbox"
+          @click="closeLightbox"
+          style="display: none"
+          :style="{ display: lightbox.open && !isLoading ? 'grid' : 'none' }"
+        >
+          <div class="lightbox-inner" @click.stop>
+            <img :src="lightbox.url" alt="foto" decoding="async" />
+            <div class="lightbox-actions">
+              <button class="primary" type="button" @click="downloadImage">guardar</button>
+              <button class="ghost" type="button" @click="closeLightbox">cerrar</button>
+            </div>
           </div>
         </div>
       </div>
