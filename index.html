@@ -127,10 +127,10 @@
           </article>
 
           <article v-for="post in posts" :key="post.id" class="post-card" :class="{ 'post-card--draft': post.status === 'draft' }" @click="openPost(post.id)">
-            <span v-if="post.status === 'draft'" class="draft-badge top-left">📝 borrador</span>
             <div class="date">{{ friendlyDate(post.created_at) }}</div>
             <h3>{{ post.title }}</h3>
             <p class="excerpt">{{ excerpt(post.body) }}</p>
+            <span v-if="post.status === 'draft'" class="draft-badge draft-badge--inline" aria-label="borrador">📝</span>
             <span
               v-if="sealLetter(post.body)"
               class="seal"
@@ -266,7 +266,7 @@
         <section v-if="view === 'detail'" class="post-detail" :class="{ 'post-detail--draft': currentPost?.status === 'draft' }">
           <div class="actions">
             <div>
-              <div v-if="currentPost?.status === 'draft'" class="draft-badge draft-badge--stack">📝 borrador</div>
+              <div v-if="currentPost?.status === 'draft'" class="draft-badge draft-badge--stack" aria-label="borrador">📝</div>
               <div class="date">{{ friendlyDate(currentPost?.created_at) }}</div>
               <div class="muted edited-at" v-if="currentPost?.updated_at">editado {{ friendlyDate(currentPost.updated_at) }}</div>
             </div>

@@ -896,7 +896,6 @@ button:hover {
 
 .post-card--draft {
   background: #e6e6e6;
-  padding-top: 40px;
 }
 
 .post-card--draft::before {
@@ -914,19 +913,18 @@ button:hover {
 .draft-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.75rem;
+  justify-content: center;
+  font-size: 0.85rem;
   color: #6b6b6b;
   background: #ededed;
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 4px 8px;
   width: fit-content;
 }
 
-.draft-badge.top-left {
-  position: absolute;
-  top: 12px;
-  left: 12px;
+.draft-badge--inline {
+  margin-top: 4px;
+  justify-self: start;
 }
 
 .draft-badge--stack {
@@ -1501,6 +1499,15 @@ button:hover {
   .post-detail .media-photo {
     max-width: 100%;
     margin: 0 auto;
+  }
+
+  .post-grid {
+    grid-auto-rows: 1fr;
+  }
+
+  .post-card {
+    height: 100%;
+    min-height: 255px;
   }
 }
   .likes-header h2 {
