@@ -70,7 +70,7 @@
         <aside class="sidebar">
         <div class="brand">
           <div class="brand-mark">
-            <img v-if="view === 'list'" class="brand-photo" src="assets/foto.jpg" alt="foto de fiona" decoding="async" />
+            <img v-if="view === 'list'" class="brand-photo" src="assets/lirios.jpeg" alt="foto de fiona" decoding="async" />
           </div>
           <div class="brand-text">
             <h1>CIALDELLA</h1>
@@ -273,6 +273,7 @@
             <div class="detail-actions">
               <button class="ghost" @click="goList">← volver</button>
               <button class="icon-btn" @click="openEdit">✏️ editar</button>
+              <button v-if="currentPost?.status === 'draft'" class="icon-btn" @click="publishCurrentPost">✨ publicar</button>
               <button class="icon-btn danger" @click="deletePost">🗑️ borrar</button>
             </div>
           </div>

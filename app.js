@@ -803,5 +803,19 @@ createApp({
       await this.loadPosts();
       this.view = "list";
     },
+    async publishCurrentPost() {
+      if (!this.currentPost) return;
+      const { error } = await supabaseClient
+        .from("posts")
+        .update({ status: "published", updated_at: new Date().toISOString() })
+        .eq("id", this.currentPost.id);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      await this.openPost(this.currentPost.id);
+      this.clearCache("cialdella_posts");
+      await this.loadPosts();
+    },
   },
 }).mount("#app");

@@ -311,7 +311,7 @@ body {
 
 .brand-photo {
   width: 100%;
-  max-width: 200px;
+  max-width: 100%;
   border-radius: 28px;
   object-fit: cover;
   box-shadow: var(--shadow);
