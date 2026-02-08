@@ -1,5 +1,6 @@
 const SUPABASE_URL = "https://ejfapcgmmbgdxakzqkfe.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_RCdVm_zuyZQHyeKwLSvwsQ_DWnGCMY2";
+const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
 const GATE_EMAILS = {
   fiona: "andybdn@hotmail.es",
   andy: "iam@andygarcia.dev",
@@ -250,6 +251,55 @@ createApp({
       holder.textContent = value;
       return holder.innerHTML.replace(/\n/g, "<br />");
     },
+    isStoragePath(value = "") {
+      if (!value) return false;
+      return !/^https?:\/\//i.test(value);
+    },
+    toStoragePath(value = "") {
+      if (!value) return "";
+      const publicPrefix = `${SUPABASE_URL}/storage/v1/object/public/media/`;
+      const signedPrefix = `${SUPABASE_URL}/storage/v1/object/sign/media/`;
+      if (value.startsWith(publicPrefix)) {
+        return value.slice(publicPrefix.length);
+      }
+      if (value.startsWith(signedPrefix)) {
+        return value.slice(signedPrefix.length).split("?")[0];
+      }
+      if (this.isStoragePath(value)) {
+        return value;
+      }
+      return "";
+    },
+    async signMediaPath(path) {
+      if (!path || !supabaseClient) return "";
+      const { data, error } = await supabaseClient.storage
+        .from("media")
+        .createSignedUrl(path, SIGNED_URL_TTL);
+      if (error) return "";
+      return data?.signedUrl || "";
+    },
+    async hydrateMediaItem(item) {
+      const next = { ...item };
+      const path = item?.path || this.toStoragePath(item?.url || "");
+      if (path) {
+        next.path = path;
+        if (!next.url || this.isStoragePath(next.url)) {
+          const signed = await this.signMediaPath(path);
+          if (signed) next.url = signed;
+        }
+      }
+      return next;
+    },
+    async hydrateLikeItem(item) {
+      const next = { ...item };
+      const path = this.toStoragePath(item?.image_url || "");
+      if (path) {
+        const signed = await this.signMediaPath(path);
+        if (signed) next.image_url = signed;
+        next.image_path = path;
+      }
+      return next;
+    },
     setEditorContent(target, html) {
       const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
       if (!el) return;
@@ -392,7 +442,13 @@ createApp({
         return;
       }
 
-      this.posts = data || [];
+      const rawPosts = data || [];
+      const hydrated = await Promise.all(rawPosts.map(async (post) => {
+        if (!Array.isArray(post.media)) return post;
+        const media = await Promise.all(post.media.map((item) => this.hydrateMediaItem(item)));
+        return { ...post, media };
+      }));
+      this.posts = hydrated;
       this.writeCache("cialdella_posts", this.posts);
       this.view = "list";
       this.isLoading = false;
@@ -413,7 +469,8 @@ createApp({
         return;
       }
 
-      this.likes = data || [];
+      const rawLikes = data || [];
+      this.likes = await Promise.all(rawLikes.map((item) => this.hydrateLikeItem(item)));
       const cachedLikes = this.readCache("cialdella_likes") || {};
       cachedLikes[owner] = this.likes;
       this.writeCache("cialdella_likes", cachedLikes);
@@ -431,7 +488,10 @@ createApp({
         return;
       }
 
-      this.currentPost = data;
+      const media = Array.isArray(data?.media)
+        ? await Promise.all(data.media.map((item) => this.hydrateMediaItem(item)))
+        : [];
+      this.currentPost = { ...data, media };
       this.view = "detail";
       this.scrollToTop();
     },
@@ -618,6 +678,7 @@ createApp({
         if (!title || !descriptionText) return;
 
         let imageUrl = this.likesEditor.imageUrl || "";
+        let imagePath = this.toStoragePath(imageUrl);
 
         if (this.likesEditor.imageFile) {
           const ext = this.likesEditor.imageFile.name.split(".").pop();
@@ -631,11 +692,9 @@ createApp({
             return;
           }
 
-          const { data: urlData } = supabaseClient.storage
-            .from("media")
-            .getPublicUrl(data.path);
-
-          imageUrl = urlData.publicUrl;
+          imagePath = data.path;
+          const signed = await this.signMediaPath(data.path);
+          imageUrl = signed || "";
         }
 
         if (this.likesEditor.id) {
@@ -644,7 +703,7 @@ createApp({
             .update({
               title,
               description,
-              image_url: imageUrl || null,
+              image_url: imagePath || imageUrl || null,
               person: this.likesOwner,
             })
             .eq("id", this.likesEditor.id);
@@ -659,7 +718,7 @@ createApp({
             .insert({
               title,
               description,
-              image_url: imageUrl || null,
+              image_url: imagePath || imageUrl || null,
               person: this.likesOwner,
             });
 
@@ -735,7 +794,10 @@ createApp({
 
         for (const item of this.pendingMedia) {
           if (!item.file) {
-            uploadedMedia.push(item);
+            const path = item.path || this.toStoragePath(item.url || "");
+            const next = { ...item };
+            if (path) next.path = path;
+            uploadedMedia.push(next);
             continue;
           }
 
@@ -750,13 +812,12 @@ createApp({
             return;
           }
 
-          const { data: urlData } = supabaseClient.storage
-            .from("media")
-            .getPublicUrl(data.path);
+          const signed = await this.signMediaPath(data.path);
 
           uploadedMedia.push({
             type: item.type,
-            url: urlData.publicUrl,
+            url: signed || "",
+            path: data.path,
             caption: item.caption || "",
           });
         }
