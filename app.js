@@ -5,7 +5,6 @@ const GATE_EMAILS = {
   fiona: "andybdn@hotmail.es",
   andy: "iam@andygarcia.dev",
 };
-
 const hasSupabase = Boolean(window.supabase && window.supabase.createClient);
 const supabaseClient = hasSupabase
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -251,6 +250,36 @@ createApp({
       holder.textContent = value;
       return holder.innerHTML.replace(/\n/g, "<br />");
     },
+    normalizeFontTags(value = "") {
+      if (!value || !this.hasHtml(value)) return value || "";
+      const sizeMap = {
+        1: 12,
+        2: 14,
+        3: 16,
+        4: 18,
+        5: 20,
+        6: 24,
+        7: 28,
+      };
+      const holder = document.createElement("div");
+      holder.innerHTML = value;
+      holder.querySelectorAll("font[size]").forEach((node) => {
+        const sizeAttr = node.getAttribute("size");
+        const px = sizeMap[sizeAttr] || 16;
+        const span = document.createElement("span");
+        Array.from(node.attributes).forEach((attr) => {
+          if (attr.name !== "size") span.setAttribute(attr.name, attr.value);
+        });
+        const existingStyle = span.getAttribute("style") || "";
+        const mergedStyle = existingStyle
+          ? `${existingStyle}; font-size: ${px}px;`
+          : `font-size: ${px}px;`;
+        span.setAttribute("style", mergedStyle);
+        span.innerHTML = node.innerHTML;
+        node.replaceWith(span);
+      });
+      return holder.innerHTML;
+    },
     isStoragePath(value = "") {
       if (!value) return false;
       return !/^https?:\/\//i.test(value);
@@ -328,6 +357,55 @@ createApp({
       } else {
         document.execCommand(command, false, value);
       }
+      this.syncEditorHtml(target);
+    },
+    clearFormat(target) {
+      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
+      if (!el) return;
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+      el.focus();
+      document.execCommand("removeFormat", false, null);
+      document.execCommand("unlink", false, null);
+      // Reset to base font size to avoid tiny defaults after clear.
+      document.execCommand("fontSize", false, "3");
+      this.syncEditorHtml(target);
+    },
+    getSelectionFontIndex() {
+      const sizes = [12, 14, 16, 18, 20, 24, 28];
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return 2;
+      const node = selection.focusNode;
+      const el = node?.nodeType === 1 ? node : node?.parentElement;
+      if (!el) return 2;
+      const raw = window.getComputedStyle(el).fontSize;
+      const current = parseFloat(raw);
+      if (!current || Number.isNaN(current)) return 2;
+      let closest = 0;
+      let best = Infinity;
+      sizes.forEach((size, idx) => {
+        const diff = Math.abs(size - current);
+        if (diff < best) {
+          best = diff;
+          closest = idx;
+        }
+      });
+      return closest;
+    },
+    adjustFontSize(direction, target) {
+      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
+      if (!el) return;
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
+      el.focus();
+      const sizes = [12, 14, 16, 18, 20, 24, 28];
+      const currentIdx = this.getSelectionFontIndex();
+      const nextIdx =
+        direction === "up"
+          ? Math.min(sizes.length - 1, currentIdx + 1)
+          : Math.max(0, currentIdx - 1);
+      const fontSizeValue = String(nextIdx + 1);
+      document.execCommand("fontSize", false, fontSizeValue);
       this.syncEditorHtml(target);
     },
     normalizeColor(value = "") {
@@ -673,7 +751,7 @@ createApp({
       this.isSavingLike = true;
       try {
         const title = this.likesEditor.title.trim();
-        const description = this.likesEditor.description.trim();
+        const description = this.normalizeFontTags(this.likesEditor.description.trim());
         const descriptionText = this.plainTextInline(description);
         if (!title || !descriptionText) return;
 
@@ -749,7 +827,7 @@ createApp({
       this.isSavingPost = true;
       try {
         const title = this.editor.title.trim();
-        const body = this.editor.body.trim();
+        const body = this.normalizeFontTags(this.editor.body.trim());
         const bodyText = this.plainTextInline(body);
         if (!title || !bodyText) return;
 

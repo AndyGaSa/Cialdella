@@ -215,6 +215,8 @@
             <div class="rich-toolbar">
               <button class="ghost mini" type="button" @click="applyFormat('bold', null, 'likes')"><strong>B</strong></button>
               <button class="ghost mini" type="button" @click="applyFormat('underline', null, 'likes')"><u>U</u></button>
+              <button class="ghost mini" type="button" @click="adjustFontSize('down', 'likes')" aria-label="texto más pequeño">A-</button>
+              <button class="ghost mini" type="button" @click="adjustFontSize('up', 'likes')" aria-label="texto más grande">A+</button>
               <div class="highlight-group" aria-label="subrayar">
                 <span class="highlight-label">subrayar</span>
                 <button class="ghost mini highlight-swatch yellow" type="button" @click="applyFormat('hiliteColor', '#ffe58a', 'likes')" aria-label="amarillo"></button>
@@ -222,6 +224,7 @@
                 <button class="ghost mini highlight-swatch turquoise" type="button" @click="applyFormat('hiliteColor', '#9be8e6', 'likes')" aria-label="turquesa"></button>
                 <button class="ghost mini highlight-swatch clear" type="button" @click="applyFormat('hiliteColor', 'transparent', 'likes')" aria-label="quitar subrayado"></button>
               </div>
+              <button class="ghost mini" type="button" @click="clearFormat('likes')">limpiar</button>
             </div>
             <div
               class="rich-editor"
@@ -310,6 +313,8 @@
             <div class="rich-toolbar">
               <button class="ghost mini" type="button" @click="applyFormat('bold', null, 'post')"><strong>B</strong></button>
               <button class="ghost mini" type="button" @click="applyFormat('underline', null, 'post')"><u>U</u></button>
+              <button class="ghost mini" type="button" @click="adjustFontSize('down', 'post')" aria-label="texto más pequeño">A-</button>
+              <button class="ghost mini" type="button" @click="adjustFontSize('up', 'post')" aria-label="texto más grande">A+</button>
               <div class="highlight-group" aria-label="subrayar">
                 <span class="highlight-label">subrayar</span>
                 <button class="ghost mini highlight-swatch yellow" type="button" @click="applyFormat('hiliteColor', '#ffe58a', 'post')" aria-label="amarillo"></button>
@@ -317,6 +322,7 @@
                 <button class="ghost mini highlight-swatch turquoise" type="button" @click="applyFormat('hiliteColor', '#9be8e6', 'post')" aria-label="turquesa"></button>
                 <button class="ghost mini highlight-swatch clear" type="button" @click="applyFormat('hiliteColor', 'transparent', 'post')" aria-label="quitar subrayado"></button>
               </div>
+              <button class="ghost mini" type="button" @click="clearFormat('post')">limpiar</button>
             </div>
             <div
               class="rich-editor"

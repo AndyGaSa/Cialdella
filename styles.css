@@ -8,7 +8,7 @@
   --card: #ffffff;
   --shadow: 0 14px 40px rgba(22, 20, 18, 0.08);
   --radius: 24px;
-  --entry-bg: url("https://ejfapcgmmbgdxakzqkfe.supabase.co/storage/v1/object/public/media/FONDO.jpg");
+  --entry-bg: url("assets/FONDO.jpg");
 }
 
 * {
@@ -254,28 +254,28 @@ body {
 
 .float-img--limon {
   left: 14%;
-  background-image: url("https://ejfapcgmmbgdxakzqkfe.supabase.co/storage/v1/object/public/media/limon.png");
+  background-image: url("assets/limon.png");
   animation-duration: 18s;
   animation-delay: 0.6s;
 }
 
 .float-img--argentina {
   left: 42%;
-  background-image: url("https://ejfapcgmmbgdxakzqkfe.supabase.co/storage/v1/object/public/media/argentina.png");
+  background-image: url("assets/argentina.png");
   animation-duration: 20s;
   animation-delay: 4.2s;
 }
 
 .float-img--alaca {
   left: 68%;
-  background-image: url("https://ejfapcgmmbgdxakzqkfe.supabase.co/storage/v1/object/public/media/alaca.png");
+  background-image: url("assets/alaca.png");
   animation-duration: 17s;
   animation-delay: 7.8s;
 }
 
 .float-img--agz {
   left: 86%;
-  background-image: url("https://ejfapcgmmbgdxakzqkfe.supabase.co/storage/v1/object/public/media/agz.jpg");
+  background-image: url("assets/agz.jpg");
   animation-duration: 19s;
   animation-delay: 10.4s;
 }
@@ -802,7 +802,31 @@ textarea {
   padding: 10px 12px;
   outline: none;
   line-height: 1.6;
+  font-size: 16px;
 }
+
+.rich-editor font[size="1"] { font-size: 12px; }
+.rich-editor font[size="2"] { font-size: 14px; }
+.rich-editor font[size="3"] { font-size: 16px; }
+.rich-editor font[size="4"] { font-size: 18px; }
+.rich-editor font[size="5"] { font-size: 20px; }
+.rich-editor font[size="6"] { font-size: 24px; }
+.rich-editor font[size="7"] { font-size: 28px; }
+
+.post-detail font[size="1"],
+.likes-detail font[size="1"] { font-size: 12px; }
+.post-detail font[size="2"],
+.likes-detail font[size="2"] { font-size: 14px; }
+.post-detail font[size="3"],
+.likes-detail font[size="3"] { font-size: 16px; }
+.post-detail font[size="4"],
+.likes-detail font[size="4"] { font-size: 18px; }
+.post-detail font[size="5"],
+.likes-detail font[size="5"] { font-size: 20px; }
+.post-detail font[size="6"],
+.likes-detail font[size="6"] { font-size: 24px; }
+.post-detail font[size="7"],
+.likes-detail font[size="7"] { font-size: 28px; }
 
 .rich-editor:empty::before {
   content: attr(data-placeholder);
@@ -1474,9 +1498,23 @@ button:hover {
     width: 64px;
     height: 64px;
   }
+
 }
 
 @media (min-width: 961px) {
+  .page {
+    grid-template-columns: 1fr;
+    padding-left: calc(32px + clamp(260px, 30vw, 320px) + 32px);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 32px;
+    left: 32px;
+    width: clamp(260px, 30vw, 320px);
+    height: calc(100vh - 64px);
+  }
+
   .icon-only {
     width: 112px;
     height: 112px;
