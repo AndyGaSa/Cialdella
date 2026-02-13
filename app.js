@@ -312,9 +312,11 @@ createApp({
       const path = item?.path || this.toStoragePath(item?.url || "");
       if (path) {
         next.path = path;
-        if (!next.url || this.isStoragePath(next.url)) {
-          const signed = await this.signMediaPath(path);
-          if (signed) next.url = signed;
+        const signed = await this.signMediaPath(path);
+        if (signed) {
+          next.url = signed;
+        } else if (!next.url || this.isStoragePath(next.url)) {
+          next.url = "";
         }
       }
       return next;
@@ -874,10 +876,11 @@ createApp({
           if (!item.file) {
             const path = item.path || this.toStoragePath(item.url || "");
             const next = { ...item };
-            if (path) next.path = path;
-            uploadedMedia.push(next);
-            continue;
-          }
+          if (path) next.path = path;
+          if (path) next.url = "";
+          uploadedMedia.push(next);
+          continue;
+        }
 
           const ext = item.file.name.split(".").pop();
           const path = `${postId}/${crypto.randomUUID()}.${ext}`;
@@ -894,7 +897,7 @@ createApp({
 
           uploadedMedia.push({
             type: item.type,
-            url: signed || "",
+            url: "",
             path: data.path,
             caption: item.caption || "",
           });
