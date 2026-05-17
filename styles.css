@@ -369,6 +369,52 @@ body {
   pointer-events: none;
 }
 
+.restaurants-card {
+  cursor: pointer;
+  display: grid;
+  gap: 14px;
+  background: linear-gradient(145deg, #fff6de 0%, #ffd8b8 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.restaurants-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.restaurants-card-copy,
+.restaurants-mobile-header {
+  position: relative;
+  z-index: 1;
+}
+
+.restaurants-card-copy h2 span {
+  display: block;
+}
+
+.restaurants-card-copy p {
+  margin: 0;
+}
+
+.restaurants-card-badge {
+  position: relative;
+  z-index: 1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(26, 26, 26, 0.9);
+  color: #fff4cf;
+  font-weight: 700;
+  box-shadow: 0 12px 22px rgba(26, 26, 26, 0.16);
+}
+
 .likes-header {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -549,6 +595,10 @@ body {
   pointer-events: none;
 }
 
+.restaurants-mobile-card {
+  background: linear-gradient(145deg, #fff6de 0%, #ffd8b8 100%);
+}
+
 .likes-mobile-header {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -570,6 +620,11 @@ body {
 }
 
 .likes-list {
+  display: grid;
+  gap: 16px;
+}
+
+.restaurants-list {
   display: grid;
   gap: 16px;
 }
@@ -601,6 +656,99 @@ body {
 .likes-topbar h2 {
   font-family: "Fraunces", serif;
   margin: 0 0 4px;
+}
+
+.restaurants-topbar {
+  background: linear-gradient(145deg, #fff8e4 0%, #ffe0c8 100%);
+}
+
+.restaurants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.restaurant-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.restaurant-card-media {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 190px;
+  flex: 0 0 190px;
+  background: linear-gradient(145deg, #fff2d9 0%, #ffe4cf 100%);
+  overflow: hidden;
+}
+
+.restaurant-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.restaurant-card-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 3rem;
+  line-height: 1;
+  text-align: center;
+  color: #9a5c24;
+}
+
+.restaurant-score-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(26, 26, 26, 0.82);
+  color: #ffefb0;
+  font-weight: 700;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  line-height: 1;
+  backdrop-filter: blur(6px);
+}
+
+.restaurant-card-copy {
+  padding: 16px;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  flex: 1 1 auto;
+}
+
+.restaurant-card-copy h3 {
+  margin: 0;
+  font-family: "Fraunces", serif;
+  font-size: 1.2rem;
+}
+
+.restaurant-card-copy .excerpt {
+  margin: 0;
+}
+
+.restaurant-empty {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
 }
 
 .likes-actions {
@@ -1113,6 +1261,25 @@ button:hover {
   font-size: 1.8rem;
 }
 
+.restaurant-detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.restaurant-detail-score {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(26, 26, 26, 0.9);
+  color: #ffefb0;
+  font-weight: 700;
+}
+
 .post-detail .actions {
   display: flex;
   justify-content: space-between;
@@ -1150,6 +1317,10 @@ button:hover {
 
 .post-detail .media-grid {
   grid-template-columns: 1fr;
+}
+
+.restaurant-media-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .media-item {
@@ -1193,6 +1364,18 @@ button:hover {
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.restaurant-editor-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.score-helper {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .editor .back-btn {
@@ -1443,6 +1626,10 @@ button:hover {
     display: none;
   }
 
+  .sidebar .restaurants-card {
+    display: none;
+  }
+
   .likes-mobile {
     display: grid;
     margin: 0;
@@ -1499,6 +1686,16 @@ button:hover {
     height: 64px;
   }
 
+  .restaurants-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurant-detail-head,
+  .restaurant-editor-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
 }
 
 @media (min-width: 961px) {
@@ -1546,6 +1743,14 @@ button:hover {
   .post-card {
     height: 100%;
     min-height: 255px;
+  }
+
+  .restaurants-grid {
+    grid-auto-rows: 1fr;
+  }
+
+  .restaurant-card {
+    height: 100%;
   }
 }
   .likes-header h2 {

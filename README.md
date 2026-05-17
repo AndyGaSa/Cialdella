@@ -40,6 +40,41 @@ for update
 to anon, authenticated
 using (true)
 with check (true);
+
+create table if not exists public.restaurants (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  place text,
+  description text not null,
+  score numeric(2,1) not null default 3.0,
+  photos jsonb default '[]'::jsonb,
+  visit_date date,
+  created_at timestamptz default now(),
+  updated_at timestamptz
+);
+
+alter table public.restaurants enable row level security;
+
+create policy "restaurants read" on public.restaurants
+for select
+to anon, authenticated
+using (true);
+
+create policy "restaurants insert" on public.restaurants
+for insert
+to anon, authenticated
+with check (true);
+
+create policy "restaurants update" on public.restaurants
+for update
+to anon, authenticated
+using (true)
+with check (true);
+
+create policy "restaurants delete" on public.restaurants
+for delete
+to anon, authenticated
+using (true);
 ```
 
 Create a public storage bucket named `media`, then run:

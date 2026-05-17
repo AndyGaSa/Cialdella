@@ -1,14 +1,15 @@
 ﻿# CIALDELLA - AI PROJECT BRIEF (CLAUDE)
 
 ## What this project is
-Cialdella is a small, static blog with an admin-style dashboard. It lets you list, create, and edit blog posts, plus manage a "likes" view that stores shared likes between Andy and Fiona. Data is stored in Supabase (tables + storage bucket).
+Cialdella is a small, static blog with an admin-style dashboard. It lets you list, create, and edit blog posts, manage a "likes" view that stores shared likes between Andy and Fiona, and keep a shared restaurants/memories section. Data is stored in Supabase (tables + storage bucket).
 
 ## How it works
 - Frontend is plain HTML/CSS/JS with Vue loaded from CDN. No build step.
 - Supabase is used for:
   - posts table (blog posts)
   - likes table (shared likes between Andy and Fiona)
-  - storage bucket media (images/audio for posts and likes)
+  - restaurants table (shared places with score, memory, photos)
+  - storage bucket media (images/audio for posts and likes, plus restaurant photos)
 - External assets:
   - Google Fonts (Fraunces + Space Grotesk)
   - Local `assets/` images (foto, icons)
@@ -18,6 +19,9 @@ Cialdella is a small, static blog with an admin-style dashboard. It lets you lis
   - editor (create/edit post)
   - likes (list of likes filtered by person)
   - likes-detail (single like detail)
+  - restaurants (shared restaurant list)
+  - restaurants-detail (single restaurant memory)
+  - restaurants-editor (create/edit restaurant memory)
 - Post body and likes description support rich text (bold, underline, highlight colors).
 - Highlight removal is done via the clear button (slashed circle) in the subrayar group.
 - Image lightbox with download/share is available on post/like images.
@@ -32,10 +36,15 @@ Likes table (used in app.js):
 - person values are "andy" or "fiona"
   - description stores HTML produced by the editor
 
+Restaurants table (used in app.js):
+- columns: id, name, place, description, score, photos (json), visit_date, created_at, updated_at
+  - description stores HTML produced by the editor
+
 Storage:
 - bucket: media
 - post media stored at: {postId}/{uuid}.{ext}
 - likes images stored at: likes/{uuid}.{ext}
+- restaurant photos stored at: restaurants/{restaurantId}/{uuid}.{ext}
 - CSS uses a public media image (FONDO.jpg) as a background texture.
 
 ## Key files
@@ -69,4 +78,4 @@ Storage:
 - Seal images live in `assets/andyseal.png` and `assets/fionaseal.png` with a centered A/F letter overlay.
 - Image media items render without the padded background container for cleaner mixed orientations.
 - Perf: JS is loaded with `defer` and CDN domains are dns-prefetched.
-- Perf: Posts/likes are cached in `localStorage` with a short TTL and cleared after saves.
+- Perf: Posts/likes/restaurants are cached in `localStorage` with a short TTL and cleared after saves.

@@ -18,13 +18,22 @@ createApp({
       gateUnlocked: false,
       gateInput: "",
       gateError: "",
+      recoveryMode: false,
+      recoveryReady: false,
+      recoveryPassword: "",
+      recoveryPasswordConfirm: "",
+      recoveryError: "",
+      recoveryMessage: "",
+      isSavingRecovery: false,
       gateUser: "fiona",
       gateFloatItems: [],
       hasInitialized: false,
       isMobile: window.matchMedia("(max-width: 960px)").matches,
       posts: [],
       likes: [],
+      restaurants: [],
       currentLike: null,
+      currentRestaurant: null,
       likesOwner: "fiona",
       likesEmojis: {
         fiona: "🌸",
@@ -51,12 +60,25 @@ createApp({
         imageUrl: "",
         isObjectUrl: false,
       },
+      restaurantEditor: {
+        id: "",
+        name: "",
+        place: "",
+        description: "",
+        score: 3,
+        visitDate: "",
+      },
       likesEditorOpen: false,
       pendingMedia: [],
+      pendingRestaurantPhotos: [],
       isEdit: false,
+      isRestaurantEdit: false,
       isSavingLike: false,
+      isSavingRestaurant: false,
       isLikesLoading: false,
+      isRestaurantsLoading: false,
       likesError: "",
+      restaurantsError: "",
       errorMsg: "",
       isSavingPost: false,
       lightbox: {
@@ -84,10 +106,12 @@ createApp({
     }
     this.buildGateFloats();
     if (hasSupabase && supabaseClient) {
-      supabaseClient.auth.getSession().then(({ data }) => {
+      this.startRecoveryFromUrl().then(() => supabaseClient.auth.getSession()).then(({ data }) => {
         if (data?.session) {
-          this.gateUnlocked = true;
           this.currentUserId = data.session.user?.id || "";
+          if (!this.recoveryMode) {
+            this.gateUnlocked = true;
+          }
         }
       });
     }
@@ -127,6 +151,40 @@ createApp({
       });
       this.gateFloatItems = items;
     },
+    async startRecoveryFromUrl() {
+      if (!hasSupabase || !supabaseClient) return;
+      const hash = window.location.hash.startsWith("#")
+        ? window.location.hash.slice(1)
+        : "";
+      if (!hash) return;
+      const params = new URLSearchParams(hash);
+      const type = params.get("type");
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      if (type !== "recovery" || !accessToken || !refreshToken) return;
+
+      this.recoveryMode = true;
+      this.recoveryMessage = "Enlace recibido. Ahora pon la nueva contraseña.";
+      this.recoveryError = "";
+
+      const { data, error } = await supabaseClient.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      if (error || !data?.session) {
+        this.recoveryError = "No pude validar el enlace de recuperación. Pide otro email.";
+        return;
+      }
+
+      this.currentUserId = data.session.user?.id || "";
+      this.recoveryReady = true;
+      this.clearAuthHash();
+    },
+    clearAuthHash() {
+      const cleanUrl = `${window.location.pathname}${window.location.search}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+    },
     initializeApp() {
       if (this.hasInitialized) return;
       this.hasInitialized = true;
@@ -146,6 +204,7 @@ createApp({
       this.loadCachedData();
       this.loadPosts();
       this.loadLikes();
+      this.loadRestaurants();
     },
     storageAvailable() {
       try {
@@ -202,6 +261,10 @@ createApp({
           this.likes = cachedLikes.andy;
           this.likesOwner = "andy";
         }
+      }
+      const cachedRestaurants = this.readCache("cialdella_restaurants");
+      if (cachedRestaurants?.length) {
+        this.restaurants = cachedRestaurants;
       }
     },
     hasHtml(value = "") {
@@ -331,23 +394,49 @@ createApp({
       }
       return next;
     },
+    async hydrateRestaurantItem(item) {
+      const next = {
+        ...item,
+        photos: Array.isArray(item?.photos) ? item.photos : [],
+      };
+      next.photos = await Promise.all(next.photos.map((photo) => this.hydrateMediaItem(photo)));
+      next.score = Number(next.score || 0);
+      return next;
+    },
     setEditorContent(target, html) {
-      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
+      const el =
+        target === "likes"
+          ? this.$refs.likesBody
+          : target === "restaurant"
+            ? this.$refs.restaurantBody
+            : this.$refs.editorBody;
       if (!el) return;
       el.innerHTML = this.renderContent(html || "");
     },
     syncEditorHtml(target) {
-      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
+      const el =
+        target === "likes"
+          ? this.$refs.likesBody
+          : target === "restaurant"
+            ? this.$refs.restaurantBody
+            : this.$refs.editorBody;
       if (!el) return;
       const html = el.innerHTML || "";
       if (target === "likes") {
         this.likesEditor.description = html;
+      } else if (target === "restaurant") {
+        this.restaurantEditor.description = html;
       } else {
         this.editor.body = html;
       }
     },
     applyFormat(command, value, target) {
-      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
+      const el =
+        target === "likes"
+          ? this.$refs.likesBody
+          : target === "restaurant"
+            ? this.$refs.restaurantBody
+            : this.$refs.editorBody;
       if (!el) return;
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return;
@@ -362,7 +451,12 @@ createApp({
       this.syncEditorHtml(target);
     },
     clearFormat(target) {
-      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
+      const el =
+        target === "likes"
+          ? this.$refs.likesBody
+          : target === "restaurant"
+            ? this.$refs.restaurantBody
+            : this.$refs.editorBody;
       if (!el) return;
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return;
@@ -395,7 +489,12 @@ createApp({
       return closest;
     },
     adjustFontSize(direction, target) {
-      const el = target === "likes" ? this.$refs.likesBody : this.$refs.editorBody;
+      const el =
+        target === "likes"
+          ? this.$refs.likesBody
+          : target === "restaurant"
+            ? this.$refs.restaurantBody
+            : this.$refs.editorBody;
       if (!el) return;
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0) return;
@@ -432,6 +531,9 @@ createApp({
     onLikesInput() {
       this.syncEditorHtml("likes");
     },
+    onRestaurantInput() {
+      this.syncEditorHtml("restaurant");
+    },
     scrollToTop() {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     },
@@ -455,6 +557,46 @@ createApp({
           this.currentUserId = data.session.user?.id || "";
           this.gateInput = "";
         });
+    },
+    async submitRecoveryPassword() {
+      if (this.isSavingRecovery) return;
+      const password = this.recoveryPassword.trim();
+      const confirmPassword = this.recoveryPasswordConfirm.trim();
+
+      if (!password || password.length < 6) {
+        this.recoveryError = "Pon una contraseña de al menos 6 caracteres.";
+        return;
+      }
+      if (password !== confirmPassword) {
+        this.recoveryError = "Las contraseñas no coinciden.";
+        return;
+      }
+      if (!hasSupabase || !supabaseClient) {
+        this.recoveryError = "No puedo guardar la contraseña sin internet.";
+        return;
+      }
+
+      this.isSavingRecovery = true;
+      this.recoveryError = "";
+      try {
+        const { data, error } = await supabaseClient.auth.updateUser({
+          password,
+        });
+        if (error) {
+          this.recoveryError = error.message;
+          return;
+        }
+
+        this.currentUserId = data.user?.id || this.currentUserId;
+        this.recoveryMessage = "Contraseña cambiada. Ya puedes entrar.";
+        this.recoveryPassword = "";
+        this.recoveryPasswordConfirm = "";
+        this.recoveryMode = false;
+        this.recoveryReady = false;
+        this.gateUnlocked = true;
+      } finally {
+        this.isSavingRecovery = false;
+      }
     },
     friendlyDate(dateString) {
       if (!dateString) return "";
@@ -500,6 +642,15 @@ createApp({
       if (!clean) return "";
       const words = clean.split(" ");
       return words.length > 4 ? `${words.slice(0, 4).join(" ")}...` : clean;
+    },
+    restaurantExcerpt(text = "") {
+      const clean = this.plainTextInline(text);
+      return clean.length > 84 ? `${clean.slice(0, 81)}...` : clean;
+    },
+    scoreLabel(value) {
+      const num = Number(value || 0);
+      if (!num) return "sin nota";
+      return num.toFixed(1);
     },
     isFileName(value = "") {
       return /\.(png|jpe?g|gif|webp|mp3|wav|m4a|mp4|mov|m4v)$/i.test(value.trim());
@@ -556,6 +707,29 @@ createApp({
       this.writeCache("cialdella_likes", cachedLikes);
       this.isLikesLoading = false;
     },
+    async loadRestaurants() {
+      this.currentRestaurant = null;
+      this.isRestaurantsLoading = true;
+      this.restaurantsError = "";
+      const { data, error } = await supabaseClient
+        .from("restaurants")
+        .select("id,name,place,description,score,photos,visit_date,created_at,updated_at")
+        .order("visit_date", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        this.restaurantsError = `No pude cargar los restaurantes. ${error.message}`;
+        this.isRestaurantsLoading = false;
+        return;
+      }
+
+      const rawRestaurants = data || [];
+      this.restaurants = await Promise.all(
+        rawRestaurants.map((item) => this.hydrateRestaurantItem(item))
+      );
+      this.writeCache("cialdella_restaurants", this.restaurants);
+      this.isRestaurantsLoading = false;
+    },
     async openPost(id) {
       const { data, error } = await supabaseClient
         .from("posts")
@@ -575,6 +749,23 @@ createApp({
       this.view = "detail";
       this.scrollToTop();
     },
+    async openRestaurant(id) {
+      this.restaurantsError = "";
+      const { data, error } = await supabaseClient
+        .from("restaurants")
+        .select("id,name,place,description,score,photos,visit_date,created_at,updated_at")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        this.restaurantsError = "No encontré ese restaurante.";
+        return;
+      }
+
+      this.currentRestaurant = await this.hydrateRestaurantItem(data);
+      this.view = "restaurants-detail";
+      this.scrollToTop();
+    },
     async goList() {
       await this.loadPosts();
       this.view = "list";
@@ -583,6 +774,10 @@ createApp({
       await this.loadLikes(owner);
       this.likesEditorOpen = false;
       this.view = "likes";
+    },
+    async goRestaurantsList() {
+      await this.loadRestaurants();
+      this.view = "restaurants";
     },
     async setLikesOwner(owner) {
       if (this.likesOwner === owner) return;
@@ -613,6 +808,21 @@ createApp({
       this.view = "editor";
       this.$nextTick(() => this.setEditorContent("post", this.editor.body));
     },
+    goNewRestaurant() {
+      this.isRestaurantEdit = false;
+      this.currentRestaurant = null;
+      this.restaurantEditor = {
+        id: "",
+        name: "",
+        place: "",
+        description: "",
+        score: 3,
+        visitDate: "",
+      };
+      this.pendingRestaurantPhotos = [];
+      this.view = "restaurants-editor";
+      this.$nextTick(() => this.setEditorContent("restaurant", this.restaurantEditor.description));
+    },
     openEdit() {
       if (!this.currentPost) return;
       this.isEdit = true;
@@ -626,6 +836,25 @@ createApp({
         : [];
       this.view = "editor";
       this.$nextTick(() => this.setEditorContent("post", this.editor.body));
+    },
+    openRestaurantEdit() {
+      if (!this.currentRestaurant) return;
+      this.isRestaurantEdit = true;
+      this.restaurantEditor = {
+        id: this.currentRestaurant.id,
+        name: this.currentRestaurant.name || "",
+        place: this.currentRestaurant.place || "",
+        description: this.currentRestaurant.description || "",
+        score: Number(this.currentRestaurant.score || 0),
+        visitDate: this.currentRestaurant.visit_date
+          ? String(this.currentRestaurant.visit_date).slice(0, 10)
+          : "",
+      };
+      this.pendingRestaurantPhotos = Array.isArray(this.currentRestaurant.photos)
+        ? [...this.currentRestaurant.photos]
+        : [];
+      this.view = "restaurants-editor";
+      this.$nextTick(() => this.setEditorContent("restaurant", this.restaurantEditor.description));
     },
     handleFiles(event) {
       const files = Array.from(event.target.files || []);
@@ -653,6 +882,20 @@ createApp({
       this.likesEditor.isObjectUrl = true;
       event.target.value = "";
     },
+    handleRestaurantPhotos(event) {
+      const files = Array.from(event.target.files || []);
+      files.forEach((file) => {
+        if (file.type.startsWith("image/")) {
+          this.pendingRestaurantPhotos.push({
+            type: "image",
+            file,
+            name: file.name,
+            caption: "",
+          });
+        }
+      });
+      event.target.value = "";
+    },
     clearLikeImage() {
       if (this.likesEditor.imagePreview) {
         if (this.likesEditor.isObjectUrl) {
@@ -666,6 +909,9 @@ createApp({
     },
     removeMedia(index) {
       this.pendingMedia.splice(index, 1);
+    },
+    removeRestaurantPhoto(index) {
+      this.pendingRestaurantPhotos.splice(index, 1);
     },
     openImage(url) {
       if (!url) return;
@@ -824,6 +1070,119 @@ createApp({
         this.isSavingLike = false;
       }
     },
+    async saveRestaurant() {
+      if (this.isSavingRestaurant) return;
+      this.isSavingRestaurant = true;
+      try {
+        const name = this.restaurantEditor.name.trim();
+        const place = this.restaurantEditor.place.trim();
+        const description = this.normalizeFontTags(this.restaurantEditor.description.trim());
+        const descriptionText = this.plainTextInline(description);
+        const score = Number(this.restaurantEditor.score || 0);
+        const visitDate = this.restaurantEditor.visitDate || null;
+
+        if (!name || !descriptionText) return;
+
+        let restaurantId = this.currentRestaurant?.id || this.restaurantEditor.id;
+
+        if (!restaurantId) {
+          const { data, error } = await supabaseClient
+            .from("restaurants")
+            .insert({
+              name,
+              place: place || null,
+              description,
+              score,
+              visit_date: visitDate,
+            })
+            .select("id")
+            .single();
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+
+          restaurantId = data.id;
+        } else {
+          const { error } = await supabaseClient
+            .from("restaurants")
+            .update({
+              name,
+              place: place || null,
+              description,
+              score,
+              visit_date: visitDate,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", restaurantId);
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+        }
+
+        const uploadedPhotos = [];
+
+        for (const item of this.pendingRestaurantPhotos) {
+          if (!item.file) {
+            const path = item.path || this.toStoragePath(item.url || "");
+            const next = { ...item };
+            if (path) next.path = path;
+            if (path) next.url = "";
+            uploadedPhotos.push(next);
+            continue;
+          }
+
+          const ext = item.file.name.split(".").pop();
+          const path = `restaurants/${restaurantId}/${crypto.randomUUID()}.${ext}`;
+          const { data, error } = await supabaseClient.storage
+            .from("media")
+            .upload(path, item.file, { upsert: true });
+
+          if (error) {
+            alert(error.message);
+            return;
+          }
+
+          uploadedPhotos.push({
+            type: "image",
+            url: "",
+            path: data.path,
+            caption: item.caption || "",
+          });
+        }
+
+        const { error: mediaError } = await supabaseClient
+          .from("restaurants")
+          .update({
+            photos: uploadedPhotos,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", restaurantId);
+
+        if (mediaError) {
+          alert(mediaError.message);
+          return;
+        }
+
+        this.restaurantEditor = {
+          id: "",
+          name: "",
+          place: "",
+          description: "",
+          score: 3,
+          visitDate: "",
+        };
+        this.pendingRestaurantPhotos = [];
+        this.clearCache("cialdella_restaurants");
+        await this.loadRestaurants();
+        await this.openRestaurant(restaurantId);
+      } finally {
+        this.isSavingRestaurant = false;
+      }
+    },
     async savePost() {
       if (this.isSavingPost) return;
       this.isSavingPost = true;
@@ -958,6 +1317,23 @@ createApp({
       await this.openPost(this.currentPost.id);
       this.clearCache("cialdella_posts");
       await this.loadPosts();
+    },
+    async deleteRestaurant() {
+      if (!this.currentRestaurant) return;
+      const ok = confirm("¿Seguro que quieres borrar este restaurante?");
+      if (!ok) return;
+      const { error } = await supabaseClient
+        .from("restaurants")
+        .delete()
+        .eq("id", this.currentRestaurant.id);
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      this.currentRestaurant = null;
+      this.clearCache("cialdella_restaurants");
+      await this.loadRestaurants();
+      this.view = "restaurants";
     },
   },
 }).mount("#app");

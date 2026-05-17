@@ -28,16 +28,45 @@
         </div>
         <div class="gate-card">
           <div class="gate-tag gate-tag--warning">⚠️ aviso: desagradablamente intensos</div>
-          <h1 class="gate-title">HOLA {{ gateUser === 'andy' ? 'Andy' : 'Fiona' }}!</h1>
-          <p class="gate-sub">ERES {{ gateUser === 'andy' ? 'ANDY' : 'FIONA' }} VERDAD? QUIEN ERES? CONTRASEÑA?!!</p>
-          <form class="gate-form" @submit.prevent="submitGate">
-            <input v-model="gateInput" type="password" placeholder="ejem si, codigo?" required @input="gateError = ''" />
-            <button class="primary" type="submit">entrar</button>
-          </form>
-          <button class="gate-switch" type="button" @click="gateUser = gateUser === 'andy' ? 'fiona' : 'andy'">
-            {{ gateUser === 'andy' ? 'Eres Fiona?' : 'Eres Andy?' }}
-          </button>
-          <p class="gate-error" v-if="gateError">{{ gateError }}</p>
+          <template v-if="!recoveryMode">
+            <h1 class="gate-title">HOLA {{ gateUser === 'andy' ? 'Andy' : 'Fiona' }}!</h1>
+            <p class="gate-sub">ERES {{ gateUser === 'andy' ? 'ANDY' : 'FIONA' }} VERDAD? QUIEN ERES? CONTRASEÑA?!!</p>
+            <form class="gate-form" @submit.prevent="submitGate">
+              <input v-model="gateInput" type="password" placeholder="ejem si, codigo?" required @input="gateError = ''" />
+              <button class="primary" type="submit">entrar</button>
+            </form>
+            <button class="gate-switch" type="button" @click="gateUser = gateUser === 'andy' ? 'fiona' : 'andy'">
+              {{ gateUser === 'andy' ? 'Eres Fiona?' : 'Eres Andy?' }}
+            </button>
+            <p class="gate-error" v-if="gateError">{{ gateError }}</p>
+          </template>
+          <template v-else>
+            <h1 class="gate-title">Nueva contraseña</h1>
+            <p class="gate-sub">vino un enlace de recovery de supabase y ahora toca cambiarla aqui.</p>
+            <form class="gate-form" @submit.prevent="submitRecoveryPassword">
+              <input
+                v-model="recoveryPassword"
+                type="password"
+                placeholder="nueva contraseña"
+                required
+                minlength="6"
+                @input="recoveryError = ''"
+              />
+              <input
+                v-model="recoveryPasswordConfirm"
+                type="password"
+                placeholder="repite la contraseña"
+                required
+                minlength="6"
+                @input="recoveryError = ''"
+              />
+              <button class="primary" type="submit" :disabled="!recoveryReady || isSavingRecovery">
+                {{ isSavingRecovery ? 'guardando...' : 'guardar contraseña' }}
+              </button>
+            </form>
+            <p class="gate-sub" v-if="recoveryMessage">{{ recoveryMessage }}</p>
+            <p class="gate-error" v-if="recoveryError">{{ recoveryError }}</p>
+          </template>
         </div>
         <div class="gate-flowers" aria-hidden="true">
           <span class="flower">🌸</span>
@@ -98,6 +127,13 @@
               <img src="assets/spidy.png" alt="" decoding="async" />
             </button>
           </div>
+        </div>
+        <div class="sidebar-card restaurants-card" v-if="view === 'list'" @click="goRestaurantsList">
+          <div class="restaurants-card-copy">
+            <h2><span>restaurantes</span><span>juntitos</span></h2>
+            <p>letterboxd pero con comida y recuerdos</p>
+          </div>
+          <div class="restaurants-card-badge">📍 {{ restaurants.length }}</div>
         </div>
       </aside>
 
@@ -165,6 +201,56 @@
               </button>
             </div>
           </div>
+          <div class="likes-mobile-card restaurants-mobile-card" @click="goRestaurantsList">
+            <div class="likes-mobile-header restaurants-mobile-header">
+              <h3><span>restaurantes</span><span>juntitos</span></h3>
+              <div class="restaurants-card-badge">📍 {{ restaurants.length }}</div>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="view === 'restaurants'" class="restaurants-list">
+          <header class="likes-topbar restaurants-topbar">
+            <div>
+              <h2><span>restaurantes</span><span>juntitos</span></h2>
+              <p class="muted">sitios a los que hemos ido juntitos jj</p>
+            </div>
+            <div class="likes-actions">
+              <button class="ghost back-btn" @click="goList">
+                <span class="arrow">←</span><span class="back-text"> volver</span>
+              </button>
+              <button class="primary" type="button" @click="goNewRestaurant">añadir</button>
+            </div>
+          </header>
+          <div class="restaurants-grid">
+            <template v-if="isRestaurantsLoading">
+              <article v-for="n in 4" :key="`restaurant-skeleton-${n}`" class="restaurant-card skeleton-card">
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line title"></div>
+                <div class="skeleton-line"></div>
+              </article>
+            </template>
+            <template v-else>
+              <article v-for="item in restaurants" :key="item.id" class="restaurant-card" @click="openRestaurant(item.id)">
+                <div class="restaurant-card-media">
+                  <img v-if="item.photos?.[0]?.url" :src="item.photos[0].url" :alt="item.name" decoding="async" />
+                  <div v-else class="restaurant-card-placeholder">🍝</div>
+                  <div class="restaurant-score-badge">★ {{ scoreLabel(item.score) }}</div>
+                </div>
+                <div class="restaurant-card-copy">
+                  <div class="date">{{ friendlyDate(item.visit_date || item.created_at) }}</div>
+                  <h3>{{ item.name }}</h3>
+                  <p class="muted" v-if="item.place">📍 {{ item.place }}</p>
+                  <p class="excerpt">{{ restaurantExcerpt(item.description) }}</p>
+                </div>
+              </article>
+            </template>
+            <div v-if="!isRestaurantsLoading && !restaurants.length" class="restaurant-empty">
+              <h3>ningun restaurante aun</h3>
+              <p class="muted">agrega el primero y guardad ahi las memorias ricas.</p>
+            </div>
+          </div>
+          <p v-if="!isRestaurantsLoading && restaurantsError" class="muted">{{ restaurantsError }}</p>
         </section>
 
         <section v-if="view === 'likes'" class="likes-list">
@@ -266,6 +352,39 @@
           </div>
         </section>
 
+        <section v-if="view === 'restaurants-detail'" class="post-detail restaurant-detail">
+          <div class="actions">
+            <div>
+              <div class="date">{{ friendlyDate(currentRestaurant?.visit_date || currentRestaurant?.created_at) }}</div>
+              <div class="muted edited-at" v-if="currentRestaurant?.updated_at">editado {{ friendlyDate(currentRestaurant.updated_at) }}</div>
+            </div>
+            <div class="detail-actions">
+              <button class="ghost" @click="goRestaurantsList">← volver</button>
+              <button class="icon-btn" @click="openRestaurantEdit">✏️ editar</button>
+              <button class="icon-btn danger" @click="deleteRestaurant">🗑️ borrar</button>
+            </div>
+          </div>
+          <div class="restaurant-detail-head">
+            <div>
+              <h3>{{ currentRestaurant?.name }}</h3>
+              <p class="muted" v-if="currentRestaurant?.place">{{ currentRestaurant.place }}</p>
+            </div>
+            <div class="restaurant-detail-score">★ {{ scoreLabel(currentRestaurant?.score) }}</div>
+          </div>
+          <div v-html="renderContent(currentRestaurant?.description)"></div>
+          <div class="media-grid restaurant-media-grid">
+            <div v-for="(item, idx) in currentRestaurant?.photos || []" :key="idx" class="media-item media-item--image">
+              <img
+                class="media-photo"
+                :src="item.url"
+                :alt="item.caption || currentRestaurant?.name || 'foto'"
+                decoding="async"
+                @click="openImage(item.url)"
+              />
+            </div>
+          </div>
+        </section>
+
         <section v-if="view === 'detail'" class="post-detail" :class="{ 'post-detail--draft': currentPost?.status === 'draft' }">
           <div class="actions">
             <div>
@@ -345,6 +464,69 @@
               <button class="ghost" type="button" :disabled="isSavingPost" @click="saveDraft">guardar borrador 📝</button>
               <button class="primary" type="submit" :disabled="isSavingPost" @click="publishPost">
                 {{ isSavingPost ? 'guardando...' : 'publicar ✨' }}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section v-if="view === 'restaurants-editor'" class="editor restaurant-editor">
+          <div class="editor-header">
+            <button class="ghost back-btn" type="button" @click="goRestaurantsList">
+              <span class="arrow">←</span><span class="back-text"> volver</span>
+            </button>
+            <div class="editor-title">{{ isRestaurantEdit ? 'editar restaurante' : 'Nuevo ristoranttee' }}</div>
+          </div>
+          <form @submit.prevent="saveRestaurant">
+            <div class="hint">nombre del sitio</div>
+            <input v-model="restaurantEditor.name" type="text" placeholder="Mr. Rabitss jjj" required />
+            <div class="hint">donde estaba?</div>
+            <input v-model="restaurantEditor.place" type="text" placeholder="alcala, la llagosta ..." />
+            <div class="restaurant-editor-row">
+              <div>
+                <div class="hint">nota</div>
+                <input v-model="restaurantEditor.score" type="range" min="0.5" max="5" step="0.5" />
+                <div class="score-helper">★ {{ scoreLabel(restaurantEditor.score) }}</div>
+              </div>
+              <div>
+                <div class="hint">cuando fuimos??</div>
+                <input v-model="restaurantEditor.visitDate" type="date" />
+              </div>
+            </div>
+            <div class="hint">que paso alli / por que os gusto</div>
+            <div class="rich-toolbar">
+              <button class="ghost mini" type="button" @click="applyFormat('bold', null, 'restaurant')"><strong>B</strong></button>
+              <button class="ghost mini" type="button" @click="applyFormat('underline', null, 'restaurant')"><u>U</u></button>
+              <button class="ghost mini" type="button" @click="adjustFontSize('down', 'restaurant')" aria-label="texto más pequeño">A-</button>
+              <button class="ghost mini" type="button" @click="adjustFontSize('up', 'restaurant')" aria-label="texto más grande">A+</button>
+              <div class="highlight-group" aria-label="subrayar">
+                <span class="highlight-label">subrayar</span>
+                <button class="ghost mini highlight-swatch yellow" type="button" @click="applyFormat('hiliteColor', '#ffe58a', 'restaurant')" aria-label="amarillo"></button>
+                <button class="ghost mini highlight-swatch pink" type="button" @click="applyFormat('hiliteColor', '#ffc3da', 'restaurant')" aria-label="rosa"></button>
+                <button class="ghost mini highlight-swatch turquoise" type="button" @click="applyFormat('hiliteColor', '#9be8e6', 'restaurant')" aria-label="turquesa"></button>
+                <button class="ghost mini highlight-swatch clear" type="button" @click="applyFormat('hiliteColor', 'transparent', 'restaurant')" aria-label="quitar subrayado"></button>
+              </div>
+              <button class="ghost mini" type="button" @click="clearFormat('restaurant')">limpiar</button>
+            </div>
+            <div
+              class="rich-editor"
+              contenteditable="true"
+              ref="restaurantBody"
+              data-placeholder="cuentame cuentame que sintio el paladar de la famosa critica FIONA CIALDELLA? LE GUSTO??"
+              @input="onRestaurantInput"
+            ></div>
+            <div class="media-upload">
+              <label class="hint">fotitos?</label>
+              <input type="file" multiple accept="image/*" @change="handleRestaurantPhotos" />
+            </div>
+            <div class="media-list" v-if="pendingRestaurantPhotos.length">
+              <div v-for="(item, idx) in pendingRestaurantPhotos" :key="idx" class="media-chip">
+                <span>🖼️ {{ item.caption || item.name || 'foto' }}</span>
+                <button class="ghost" type="button" @click="removeRestaurantPhoto(idx)">x</button>
+              </div>
+            </div>
+            <div class="editor-actions">
+              <button class="primary" type="submit" :disabled="isSavingRestaurant">
+                {{ isSavingRestaurant ? 'guardando...' : 'Subir chisme 🍳' }}
               </button>
             </div>
           </form>
