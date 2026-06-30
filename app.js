@@ -18,6 +18,11 @@ createApp({
       gateUnlocked: false,
       gateInput: "",
       gateError: "",
+      forgotPasswordMode: false,
+      forgotPasswordEmail: "",
+      forgotPasswordError: "",
+      forgotPasswordMessage: "",
+      isSendingReset: false,
       recoveryMode: false,
       recoveryReady: false,
       recoveryPassword: "",
@@ -130,6 +135,59 @@ createApp({
     window.removeEventListener("keydown", this.handleKeydown);
   },
   methods: {
+    // 🔧 ADD THESE NEW METHODS:
+  
+  toggleForgotPassword() {
+    this.forgotPasswordMode = !this.forgotPasswordMode;
+    if (!this.forgotPasswordMode) {
+      this.forgotPasswordEmail = "";
+      this.forgotPasswordError = "";
+      this.forgotPasswordMessage = "";
+    }
+  },
+  
+  async sendPasswordResetEmail() {
+    if (this.isSendingReset) return;
+    
+    const email = this.forgotPasswordEmail.trim();
+    
+    if (!email) {
+      this.forgotPasswordError = "Pon tu email.";
+      return;
+    }
+    
+    if (!hasSupabase || !supabaseClient) {
+      this.forgotPasswordError = "No hay internet. Intenta más tarde.";
+      return;
+    }
+    
+    this.isSendingReset = true;
+    this.forgotPasswordError = "";
+    this.forgotPasswordMessage = "";
+    
+    try {
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}`, // Uses your production domain
+      });
+      
+      if (error) {
+        this.forgotPasswordError = error.message || "No pude enviar el email.";
+        return;
+      }
+      
+      this.forgotPasswordMessage = `Email enviado a ${email}. Revisa tu bandeja.`;
+      this.forgotPasswordEmail = "";
+      
+      // Close form after 5 seconds
+      setTimeout(() => {
+        this.forgotPasswordMode = false;
+      }, 5000);
+      
+    } finally {
+      this.isSendingReset = false;
+    }
+  },
+},
     buildGateFloats() {
       const assets = [
         "assets/limon.png",
