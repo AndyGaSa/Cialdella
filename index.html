@@ -20,34 +20,39 @@
   </head>
   <body>
     <div id="app" class="app-root" v-cloak>
-      <div class="gate" v-if="!gateUnlocked">
-        <div class="gate-orbit">
-          <span class="gate-dot gate-dot--one"></span>
-          <span class="gate-dot gate-dot--two"></span>
-          <span class="gate-dot gate-dot--three"></span>
-        </div>
-        <div class="gate-card">
-          <div class="gate-tag gate-tag--warning">⚠️ aviso: desagradablamente intensos</div>
-          <template v-if="!recoveryMode">
-            <h1 class="gate-title">HOLA {{ gateUser === 'andy' ? 'Andy' : 'Fiona' }}!</h1>
-            <p class="gate-sub">ERES {{ gateUser === 'andy' ? 'ANDY' : 'FIONA' }} VERDAD? QUIEN ERES? CONTRASEÑA?!!</p>
-            <form class="gate-form" @submit.prevent="submitGate">
-              <input v-model="gateInput" type="password" placeholder="ejem si, codigo?" required @input="gateError = ''" />
-              <button class="primary" type="submit">entrar</button>
-            </form>
-            <button class="gate-switch" type="button" @click="gateUser = gateUser === 'andy' ? 'fiona' : 'andy'">
-              {{ gateUser === 'andy' ? 'Eres Fiona?' : 'Eres Andy?' }}
-            </button>
-            <button 
-              class="gate-switch" 
-              type="button" 
-              @click="toggleForgotPassword"
-              style="font-size: 12px; opacity: 0.7; margin-top: 8px;"
-            >
-              ¿Olvidaste la contraseña?
-            </button>
-            <p class="gate-error" v-if="gateError">{{ gateError }}</p>
-          </template>
+     <div class="gate" v-if="!gateUnlocked">
+  <div class="gate-orbit">
+    <span class="gate-dot gate-dot--one"></span>
+    <span class="gate-dot gate-dot--two"></span>
+    <span class="gate-dot gate-dot--three"></span>
+  </div>
+  <div class="gate-card">
+    <div class="gate-tag gate-tag--warning">⚠️ aviso: desagradablemente intensos</div>
+    
+    <!-- NORMAL LOGIN -->
+    <template v-if="!recoveryMode && !forgotPasswordMode">
+      <h1 class="gate-title">HOLA {{ gateUser === 'andy' ? 'Andy' : 'Fiona' }}!</h1>
+      <p class="gate-sub">ERES {{ gateUser === 'andy' ? 'ANDY' : 'FIONA' }} VERDAD? QUIEN ERES? CONTRASEÑA?!!</p>
+      <form class="gate-form" @submit.prevent="submitGate">
+        <input v-model="gateInput" type="password" placeholder="ejem si, codigo?" required @input="gateError = ''" />
+        <button class="primary" type="submit">entrar</button>
+      </form>
+      <button class="gate-switch" type="button" @click="gateUser = gateUser === 'andy' ? 'fiona' : 'andy'">
+        {{ gateUser === 'andy' ? 'Eres Fiona?' : 'Eres Andy?' }}
+      </button>
+      <!-- 🔧 NEW: Forgot Password Link -->
+      <button 
+        class="gate-switch" 
+        type="button" 
+        @click="toggleForgotPassword"
+        style="font-size: 12px; opacity: 0.7; margin-top: 8px;"
+      >
+        ¿Olvidaste la contraseña?
+      </button>
+      <p class="gate-error" v-if="gateError">{{ gateError }}</p>
+    </template>
+
+    <!-- 🔧 NEW: FORGOT PASSWORD FORM -->
     <template v-if="forgotPasswordMode && !recoveryMode">
       <h1 class="gate-title">Recuperar Contraseña</h1>
       <p class="gate-sub">Te enviaremos un email con un enlace para cambiar tu contraseña.</p>
@@ -61,7 +66,7 @@
         />
         <button class="primary" type="submit" :disabled="isSendingReset">
           {{ isSendingReset ? 'Enviando...' : 'Enviar Email' }}
-            </button>
+        </button>
       </form>
       <button 
         class="gate-switch" 
@@ -76,60 +81,63 @@
         ✅ {{ forgotPasswordMessage }}
       </p>
     </template>
-          <template v-if="recoveryMode">
-            <h1 class="gate-title">Nueva contraseña</h1>
-            <p class="gate-sub">vino un enlace de recovery de supabase y ahora toca cambiarla aqui.</p>
-            <form class="gate-form" @submit.prevent="submitRecoveryPassword">
-              <input
-                v-model="recoveryPassword"
-                type="password"
-                placeholder="nueva contraseña"
-                required
-                minlength="6"
-                @input="recoveryError = ''"
-              />
-              <input
-                v-model="recoveryPasswordConfirm"
-                type="password"
-                placeholder="repite la contraseña"
-                required
-                minlength="6"
-                @input="recoveryError = ''"
-              />
-              <button class="primary" type="submit" :disabled="!recoveryReady || isSavingRecovery">
-                {{ isSavingRecovery ? 'guardando...' : 'guardar contraseña' }}
-              </button>
-            </form>
-            <p class="gate-sub" v-if="recoveryMessage">{{ recoveryMessage }}</p>
-            <p class="gate-error" v-if="recoveryError">{{ recoveryError }}</p>
-          </template>
-        </div>
-        <div class="gate-flowers" aria-hidden="true">
-          <span class="flower">🌸</span>
-          <span class="flower">🌼</span>
-          <span class="flower">💮</span>
-          <span class="flower">🌺</span>
-          <span class="flower">🌷</span>
-          <span class="flower">🌸</span>
-          <span class="flower">🌼</span>
-          <span class="flower">💮</span>
-          <span class="flower">🌺</span>
-          <span class="flower">🌷</span>
-        </div>
-        <div class="gate-floats" aria-hidden="true">
-          <span
-            v-for="(item, idx) in gateFloatItems"
-            :key="`float-${idx}`"
-            class="float-img"
-            :style="{
-              left: item.left,
-              backgroundImage: `url('${item.url}')`,
-              animationDuration: item.duration,
-              animationDelay: item.delay,
-            }"
-          ></span>
-        </div>
-      </div>
+
+    <!-- PASSWORD RECOVERY (from email link) -->
+    <template v-if="recoveryMode">
+      <h1 class="gate-title">Nueva contraseña</h1>
+      <p class="gate-sub">vino un enlace de recovery de supabase y ahora toca cambiarla aqui.</p>
+      <form class="gate-form" @submit.prevent="submitRecoveryPassword">
+        <input
+          v-model="recoveryPassword"
+          type="password"
+          placeholder="nueva contraseña"
+          required
+          minlength="6"
+          @input="recoveryError = ''"
+        />
+        <input
+          v-model="recoveryPasswordConfirm"
+          type="password"
+          placeholder="repite la contraseña"
+          required
+          minlength="6"
+          @input="recoveryError = ''"
+        />
+        <button class="primary" type="submit" :disabled="!recoveryReady || isSavingRecovery">
+          {{ isSavingRecovery ? 'guardando...' : 'guardar contraseña' }}
+        </button>
+      </form>
+      <p class="gate-sub" v-if="recoveryMessage">{{ recoveryMessage }}</p>
+      <p class="gate-error" v-if="recoveryError">{{ recoveryError }}</p>
+    </template>
+  </div>
+
+  <div class="gate-flowers" aria-hidden="true">
+    <span class="flower">🌸</span>
+    <span class="flower">🌼</span>
+    <span class="flower">💮</span>
+    <span class="flower">🌺</span>
+    <span class="flower">🌷</span>
+    <span class="flower">🌸</span>
+    <span class="flower">🌼</span>
+    <span class="flower">💮</span>
+    <span class="flower">🌺</span>
+    <span class="flower">🌷</span>
+  </div>
+  <div class="gate-floats" aria-hidden="true">
+    <span
+      v-for="(item, idx) in gateFloatItems"
+      :key="`float-${idx}`"
+      class="float-img"
+      :style="{
+        left: item.left,
+        backgroundImage: `url('${item.url}')`,
+        animationDuration: item.duration,
+        animationDelay: item.delay,
+      }"
+    ></span>
+  </div>
+</div>
 
       <div class="page" v-if="gateUnlocked">
         <aside class="sidebar">
