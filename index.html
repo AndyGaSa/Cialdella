@@ -38,9 +38,45 @@
             <button class="gate-switch" type="button" @click="gateUser = gateUser === 'andy' ? 'fiona' : 'andy'">
               {{ gateUser === 'andy' ? 'Eres Fiona?' : 'Eres Andy?' }}
             </button>
+            <button 
+              class="gate-switch" 
+              type="button" 
+              @click="toggleForgotPassword"
+              style="font-size: 12px; opacity: 0.7; margin-top: 8px;"
+            >
+              ¿Olvidaste la contraseña?
+            </button>
             <p class="gate-error" v-if="gateError">{{ gateError }}</p>
           </template>
-          <template v-else>
+    <template v-if="forgotPasswordMode && !recoveryMode">
+      <h1 class="gate-title">Recuperar Contraseña</h1>
+      <p class="gate-sub">Te enviaremos un email con un enlace para cambiar tu contraseña.</p>
+      <form class="gate-form" @submit.prevent="sendPasswordResetEmail">
+        <input 
+          v-model="forgotPasswordEmail" 
+          type="email" 
+          placeholder="tu email"
+          required
+          @input="forgotPasswordError = ''"
+        />
+        <button class="primary" type="submit" :disabled="isSendingReset">
+          {{ isSendingReset ? 'Enviando...' : 'Enviar Email' }}
+            </button>
+      </form>
+      <button 
+        class="gate-switch" 
+        type="button" 
+        @click="toggleForgotPassword"
+        style="font-size: 12px; opacity: 0.7; margin-top: 8px;"
+      >
+        Volver al login
+      </button>
+      <p class="gate-error" v-if="forgotPasswordError">{{ forgotPasswordError }}</p>
+      <p class="gate-sub" v-if="forgotPasswordMessage" style="color: #4caf50; margin-top: 16px;">
+        ✅ {{ forgotPasswordMessage }}
+      </p>
+    </template>
+          <template v-if="recoveryMode">
             <h1 class="gate-title">Nueva contraseña</h1>
             <p class="gate-sub">vino un enlace de recovery de supabase y ahora toca cambiarla aqui.</p>
             <form class="gate-form" @submit.prevent="submitRecoveryPassword">
