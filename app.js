@@ -186,7 +186,6 @@ createApp({
     } finally {
       this.isSendingReset = false;
     }
-  },
 },
     buildGateFloats() {
       const assets = [
